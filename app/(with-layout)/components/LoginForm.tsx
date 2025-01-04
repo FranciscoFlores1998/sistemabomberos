@@ -1,0 +1,77 @@
+'use client'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import cookie from "js-cookie"
+import { useRouter } from "next/navigation";
+
+export default function LoginForm( ) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const data={
+        nombreUsuario: username,
+        contrasena: password
+     }
+    const response = await fetch(
+      `https://6207-190-211-2-199.ngrok-free.app/usuario/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+    if(response.status==401){
+      cookie.set("login","false");
+      alert("usuario o contraseña incorrecta");
+      return;
+    }
+    const fetchData= await response.json();
+    cookie.set("login",JSON.stringify(fetchData));
+    router.push('/')
+  };
+
+  return (
+    <Card className="w-[350px]">
+      <CardHeader>
+        <CardTitle>Iniciar sesión</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit}>
+          <div className="grid w-full items-center gap-4">
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="username">Usuario</Label>
+              <Input
+                id="username"
+                placeholder="Ingrese su usuario"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Ingrese su contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
+        </form>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button variant="outline">Cancelar</Button>
+        <Button onClick={handleSubmit}>Ingresar</Button>
+      </CardFooter>
+    </Card>
+  );
+}
