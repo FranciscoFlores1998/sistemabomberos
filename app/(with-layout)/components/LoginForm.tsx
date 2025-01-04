@@ -17,8 +17,7 @@ export default function LoginForm( ) {
         nombreUsuario: username,
         contrasena: password
      }
-    const response = await fetch(
-      `https://cc23-190-211-2-199.ngrok-free.app/usuario/login`,
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/login`,
       {
         method: "POST",
         headers: {

@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     const parteEmergencia = await request.json()
 
     // Aquí deberías hacer la llamada a tu API backend
-    const response = await fetch('https://cc23-190-211-2-199.ngrok-free.app/parte-emergencia/crear', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/crear`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

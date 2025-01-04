@@ -99,8 +99,7 @@ export default function CrearParteEmergencia() {
 
   useEffect(() => {
     const obtenerParteAsistencia = async () => {
-      const response = await fetch(
-        "https://cc23-190-211-2-199.ngrok-free.app/parte-asistencia/obtener",
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`,
         {
           method: "GET",
           headers: {
