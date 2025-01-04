@@ -28,6 +28,9 @@ export default function Header() {
             <Link href="/busqueda" className="hover:underline">Busqueda</Link>
           </li>
           <li>
+            <Link href="/voluntario" className="hover:underline">Voluntario</Link>
+          </li>
+          <li>
             <Link href="/perfil" className="hover:underline">Perfil</Link>
           </li>
           <li>
