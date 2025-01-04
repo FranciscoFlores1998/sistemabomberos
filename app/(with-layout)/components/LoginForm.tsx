@@ -18,7 +18,7 @@ export default function LoginForm( ) {
         contrasena: password
      }
     const response = await fetch(
-      `https://6207-190-211-2-199.ngrok-free.app/usuario/login`,
+      `https://cc23-190-211-2-199.ngrok-free.app/usuario/login`,
       {
         method: "POST",
         headers: {
