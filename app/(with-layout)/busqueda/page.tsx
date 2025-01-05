@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Search, UserPlus } from 'lucide-react';
 
 interface VoluntarioData {
-  idVoluntario: string;
+  idVoluntario: number;
   nombreVol: string;
   fechaNac: string;
   direccion: string;
@@ -23,10 +23,10 @@ interface VoluntarioData {
   alergias: string;
   fechaIngreso: string;
   claveRadial: string;
-  cargoVoluntario: string;
   rutVoluntario: string;
   idCompania: string;
   idUsuario: string;
+  idCargo: number;
 }
 
 export default function Busqueda() {
@@ -116,7 +116,7 @@ export default function Busqueda() {
               <DataItem label="Alergias" value={voluntario.alergias || "Ninguna"} />
               <DataItem label="Fecha de Ingreso" value={voluntario.fechaIngreso} />
               <DataItem label="Clave Radial" value={voluntario.claveRadial} />
-              <DataItem label="Cargo Voluntario" value={voluntario.cargoVoluntario} />
+              <DataItem label="Cargo Voluntario" value={voluntario.idCargo.toString()} />
               <DataItem label="RUT Voluntario" value={voluntario.rutVoluntario} />
               <DataItem label="ID Compañía" value={voluntario.idCompania} />
               <DataItem label="ID Usuario" value={voluntario.idUsuario || "No asignado"} />
