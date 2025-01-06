@@ -29,23 +29,15 @@ interface TipoCitacion {
   nombreTipoLlamado: string;
 }
 
-interface Voluntario {
-  id: number;
-  nombre: string;
-}
-
-export default function CrearParteEmergencia() {
+export default function CrearParteAsistencia() {
   const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([]);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-  const [filteredVoluntariosCuerpo, setFilteredVoluntariosCuerpo] = useState<Voluntario[]>([]);
-  const [filteredVoluntariosCompania, setFilteredVoluntariosCompania] = useState<Voluntario[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const router = useRouter();
   const [formData, setFormData] = useState({
     folioPAsistencia: "",
     aCargoDelCuerpo: "",
     aCargoDeLaCompania: "",
-    fechaAsistencia: "",	
+    fechaAsistencia: "",
     horaInicio: "",
     horaFin: "",
     direccionAsistencia: "",
@@ -55,7 +47,10 @@ export default function CrearParteEmergencia() {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string | Date,
+    e:
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      | string
+      | Date,
     name?: string
   ) => {
     if (e instanceof Date && name) {
@@ -123,7 +118,6 @@ export default function CrearParteEmergencia() {
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
-        // Obtener tipo de llamado
         const responseTipoLlamado = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
           {
@@ -145,29 +139,6 @@ export default function CrearParteEmergencia() {
             variant: "destructive",
           });
         }
-
-        // Obtener voluntarios
-        const responseVoluntarios = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }
-        );
-
-        if (responseVoluntarios.ok) {
-          const dataVoluntarios = await responseVoluntarios.json();
-          setVoluntarios(dataVoluntarios);
-        } else {
-          toast({
-            title: "Error",
-            description: "Hubo un error al obtener la lista de voluntarios.",
-            variant: "destructive",
-          });
-        }
       } catch (error) {
         console.error("Error al obtener datos:", error);
         toast({
@@ -185,7 +156,7 @@ export default function CrearParteEmergencia() {
     <div className="container mx-auto py-10">
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Crear Parte de Emergencia</CardTitle>
+          <CardTitle>Crear Parte de Asistencia</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
@@ -193,7 +164,9 @@ export default function CrearParteEmergencia() {
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="idTipoLlamado">Tipo de llamado</Label>
                 <Select
-                  onValueChange={(value) => handleChange(value, "idTipoLlamado")}
+                  onValueChange={(value) =>
+                    handleChange(value, "idTipoLlamado")
+                  }
                   value={formData.idTipoLlamado}
                 >
                   <SelectTrigger className="w-full">
@@ -201,7 +174,10 @@ export default function CrearParteEmergencia() {
                   </SelectTrigger>
                   <SelectContent>
                     {tipoCitacion.map((tipo) => (
-                      <SelectItem key={tipo.idTipoLlamado} value={tipo.idTipoLlamado.toString()}>
+                      <SelectItem
+                        key={tipo.idTipoLlamado}
+                        value={tipo.idTipoLlamado.toString()}
+                      >
                         {tipo.nombreTipoLlamado}
                       </SelectItem>
                     ))}
@@ -242,9 +218,9 @@ export default function CrearParteEmergencia() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaAsistencia">Fecha de Asistencia</Label>
-                <DatePicker                
-                date={date}
-                setDate={(date) => setDate(date || new Date())}
+                <DatePicker
+                  date={date}
+                  setDate={(date) => setDate(date || new Date())}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -268,7 +244,6 @@ export default function CrearParteEmergencia() {
                   onChange={handleChange}
                   required
                 />
-                
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDeLaCompania">
@@ -298,10 +273,9 @@ export default function CrearParteEmergencia() {
           <Button variant="outline" onClick={() => router.back()}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>Crear Parte de Emergencia</Button>
+          <Button onClick={handleSubmit}>Crear Parte de Asistencia</Button>
         </CardFooter>
       </Card>
     </div>
   );
 }
-
