@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,20 +23,50 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
 
 interface MaterialPeligroso {
   idMaterialP: number;
   clasificacion: string;
 }
 
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+}
+
+interface ClaveEmergencia {
+  idClaveEmergencia: number;
+  nombreClaveEmergencia: string;
+}
+
+interface ParteAsistencia {
+  folioPAsistencia: number;
+  observaciones: string;
+}
+
+interface FormData {
+  horaInicio: string;
+  horaFin: string;
+  fechaEmergencia: string;
+  preInforme: string;
+  llamarEmpresaQuimica: boolean;
+  descripcionMaterialP: string;
+  direccionEmergencia: string;
+  idOficial: string;
+  idClaveEmergencia: string;
+  folioPAsistencia: string | null;
+  idMaterialP: string | null;
+  isDescripcionDisabled: boolean;
+}
+
 export default function CrearParteEmergencia() {
   const [date, setDate] = useState<Date>(new Date());
-  const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState([]);
+  const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState<ParteAsistencia[]>([]);
   const [materialesPeligrosos, setMaterialesPeligrosos] = useState<MaterialPeligroso[]>([]);
-  const [voluntarios, setVoluntarios] = useState([]);
-  const [claveemergencia, setClaveEmergencia] = useState([]);
-  const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [claveemergencia, setClaveEmergencia] = useState<ClaveEmergencia[]>([]);
+  const [formData, setFormData] = useState<FormData>({
     horaInicio: "",
     horaFin: "",
     fechaEmergencia: "",
@@ -47,8 +76,11 @@ export default function CrearParteEmergencia() {
     direccionEmergencia: "",
     idOficial: "",
     idClaveEmergencia: "",
-    folioPAsistencia: "",
+    folioPAsistencia: null,
+    idMaterialP: null,
+    isDescripcionDisabled: true,
   });
+  const { toast } = useToast();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string | boolean,
@@ -60,14 +92,22 @@ export default function CrearParteEmergencia() {
         [name]: e,
       }));
     } else if (typeof e === "string" && name) {
-      setFormData((prevState) => ({
-        ...prevState,
-        [name]: e,
-      }));
-    } else {
-      const { name, value } = (
-        e as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      ).target;
+      if (name === "idMaterialP") {
+        const isNoneSelected = e === "null";
+        setFormData((prevState) => ({
+          ...prevState,
+          [name]: isNoneSelected ? null : e,
+          isDescripcionDisabled: isNoneSelected,
+          descripcionMaterialP: isNoneSelected ? "" : prevState.descripcionMaterialP,
+        }));
+      } else {
+        setFormData((prevState) => ({
+          ...prevState,
+          [name]: e === "null" ? null : e,
+        }));
+      }
+    } else if (e && typeof e === 'object' && 'target' in e) {
+      const { name, value } = e.target as HTMLInputElement;
       setFormData((prevState) => ({
         ...prevState,
         [name]: value,
@@ -77,7 +117,23 @@ export default function CrearParteEmergencia() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    console.log("Formulario enviado"); // Para verificar que la función se está ejecutando
+
+    // Validación de campos requeridos
+    const requiredFields = ['horaInicio', 'horaFin', 'preInforme', 'direccionEmergencia', 'idOficial', 'idClaveEmergencia'];
+    const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
+
+    if (missingFields.length > 0) {
+      console.log("Campos faltantes:", missingFields); // Para depuración
+      toast({
+        title: "Campos faltantes",
+        description: `Por favor, complete los siguientes campos: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("Datos del formulario:", formData); // Para verificar los datos antes de enviar
     formData.fechaEmergencia = formatearFecha(date.toISOString());
 
     try {
@@ -91,24 +147,38 @@ export default function CrearParteEmergencia() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        console.log("Respuesta del servidor:", data); // Para verificar la respuesta del servidor
+
         toast({
-          title: "Parte de emergencia creado",
-          description: "El parte de emergencia se ha creado exitosamente.",
+          title: "Parte de emergencia guardado",
+          description: "El parte de emergencia se ha guardado exitosamente.",
         });
-        router.push("/parte-emergencia");
+
+        // Opcional: Limpiar el formulario después de guardar
+        setFormData({
+          horaInicio: "",
+          horaFin: "",
+          fechaEmergencia: "",
+          preInforme: "",
+          llamarEmpresaQuimica: false,
+          descripcionMaterialP: "",
+          direccionEmergencia: "",
+          idOficial: "",
+          idClaveEmergencia: "",
+          folioPAsistencia: null,
+          idMaterialP: null,
+          isDescripcionDisabled: true,
+        });
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error || "Hubo un error al crear el parte de emergencia.",
-          variant: "destructive",
-        });
+        throw new Error(errorData.error || "Hubo un error al crear el parte de emergencia.");
       }
     } catch (error) {
+      console.error("Error al guardar:", error); // Para depuración
       toast({
         title: "Error",
-        description: "Hubo un error al conectar con el servidor.",
+        description: error instanceof Error ? error.message : "Hubo un error al conectar con el servidor.",
         variant: "destructive",
       });
     }
@@ -141,7 +211,6 @@ export default function CrearParteEmergencia() {
         });
       }
     };
-
 
     const obtenerMaterialesPeligrosos = async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materialP/obtener`,
@@ -223,7 +292,7 @@ export default function CrearParteEmergencia() {
         });
       }
     };
-    
+
     obtenerClaveEmergencia();
     obtenerVoluntarios();
     obtenerMaterialesPeligrosos();
@@ -239,7 +308,6 @@ export default function CrearParteEmergencia() {
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
-            
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="horaInicio">Hora de Inicio</Label>
                 <Input
@@ -263,7 +331,7 @@ export default function CrearParteEmergencia() {
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="horaFin">Fecha</Label>
+                <Label htmlFor="fechaEmergencia">Fecha</Label>
                 <DatePicker
                   date={date}
                   setDate={(date) => setDate(date || new Date())}
@@ -290,13 +358,38 @@ export default function CrearParteEmergencia() {
                 <Label htmlFor="llamarEmpresaQuimica">Llamar Empresa Química</Label>
               </div>
               <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="idMaterialP">Material Peligroso</Label>
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "idMaterialP")
+                  }
+                  value={formData.idMaterialP === null ? "null" : formData.idMaterialP}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccione un Material Peligroso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">Ninguno</SelectItem>
+                    {materialesPeligrosos.map((material) => (
+                      <SelectItem
+                        key={material.idMaterialP}
+                        value={material.idMaterialP.toString()}
+                      >
+                        {material.idMaterialP} - {material.clasificacion}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="descripcionMaterialP">Descripción material peligroso</Label>
                 <Textarea
                   id="descripcionMaterialP"
                   name="descripcionMaterialP"
                   value={formData.descripcionMaterialP}
                   onChange={handleChange}
-                  required
+                  disabled={formData.isDescripcionDisabled}
+                  required={!formData.isDescripcionDisabled}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -309,15 +402,13 @@ export default function CrearParteEmergencia() {
                   required
                 />
               </div>
-
-
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="idOficial">Oficial</Label>
                 <Select
                   onValueChange={(value) =>
                     handleChange(value, "idOficial")
                   }
-                  value={formData.idVoluntario}
+                  value={formData.idOficial}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccione un Oficial" />
@@ -334,7 +425,6 @@ export default function CrearParteEmergencia() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="idClaveEmergencia">Clave Emergencia</Label>
                 <Select
@@ -358,19 +448,19 @@ export default function CrearParteEmergencia() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="folioPAsistencia">Folio P. Asistencia</Label>
                 <Select
                   onValueChange={(value) =>
                     handleChange(value, "folioPAsistencia")
                   }
-                  value={formData.folioPAsistencia}
+                  value={formData.folioPAsistencia === null ? "null" : formData.folioPAsistencia}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccione un folio" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="null">Ninguno</SelectItem>
                     {parteAsistenciaOptions.map((option) => (
                       <SelectItem
                         key={option.folioPAsistencia}
@@ -379,17 +469,17 @@ export default function CrearParteEmergencia() {
                         {option.folioPAsistencia} - {option.observaciones}
                       </SelectItem>
                     ))}
-                  </SelectContent>  
+                  </SelectContent>
                 </Select>
               </div>
             </div>
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button variant="outline" onClick={() => window.history.back()}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>Crear Parte de Emergencia</Button>
+          <Button type="submit" onClick={handleSubmit}>Guardar Parte de Emergencia</Button>
         </CardFooter>
       </Card>
     </div>
