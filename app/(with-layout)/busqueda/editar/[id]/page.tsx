@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface VoluntarioData {
   idVoluntario: number
@@ -25,39 +26,63 @@ interface VoluntarioData {
   idCargo: number
 }
 
+interface CargoData {
+  idCargo: number
+  nombreCarg: string
+}
+
+const tiposSangre = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
 export default function EditarVoluntarioPage() {
   const router = useRouter()
   const [voluntario, setVoluntario] = useState<VoluntarioData | null>(null)
+  const [cargos, setCargos] = useState<CargoData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchVoluntario = async () => {
+    const fetchData = async () => {
       setLoading(true)
       setError(null)
       try {
         const id = window.location.pathname.split('/').pop()
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/buscar/${id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        })
-        if (!response.ok) {
-          throw new Error('Failed to fetch volunteer data')
+        const [voluntarioResponse, cargosResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/buscar/${id}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/cargo/obtener`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          })
+        ])
+
+        if (!voluntarioResponse.ok || !cargosResponse.ok) {
+          throw new Error('Failed to fetch data')
         }
-        const data = await response.json()
-        setVoluntario(data)
+
+        const [voluntarioData, cargosData] = await Promise.all([
+          voluntarioResponse.json(),
+          cargosResponse.json()
+        ])
+
+        setVoluntario(voluntarioData)
+        setCargos(cargosData)
       } catch (err) {
-        setError('Error fetching volunteer data. Please try again.')
+        setError('Error fetching data. Please try again.')
         console.error(err)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchVoluntario()
+    fetchData()
   }, [])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -65,8 +90,7 @@ export default function EditarVoluntarioPage() {
     setLoading(true)
     setError(null)
     try {
-      const id = window.location.pathname.split('/').pop()
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/actualizar/${voluntario?.rutVoluntario.toString()}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/actualizar/${voluntario?.idVoluntario}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -77,7 +101,7 @@ export default function EditarVoluntarioPage() {
       if (!response.ok) {
         throw new Error('Failed to update volunteer data')
       }
-      router.push('/voluntario')
+      router.push('/busqueda')
     } catch (err) {
       setError('Error updating volunteer data. Please try again.')
       console.error(err)
@@ -89,6 +113,10 @@ export default function EditarVoluntarioPage() {
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target
     setVoluntario(prev => prev ? { ...prev, [name]: value } : null)
+  }
+
+  const handleCargoChange = (value: string) => {
+    setVoluntario(prev => prev ? { ...prev, idCargo: parseInt(value) } : null)
   }
 
   if (loading) {
@@ -136,13 +164,22 @@ export default function EditarVoluntarioPage() {
         <form onSubmit={handleSubmit}>
           <CardContent>
             <div className="grid w-full items-center gap-4">
+
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="nombreVol">Nombre</Label>
-                <Input id="nombreVol" name="nombreVol" value={voluntario.nombreVol} onChange={handleInputChange} />
+                <Input id="nombreVol" name="nombreVol" value={voluntario.nombreVol} disabled />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaNac">Fecha de Nacimiento</Label>
-                <Input id="fechaNac" name="fechaNac" type="date" value={voluntario.fechaNac} onChange={handleInputChange} />
+                <Input id="fechaNac" name="fechaNac" type="date" value={voluntario.fechaNac} disabled />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
+                <Input id="fechaIngreso" name="fechaIngreso" type="date" value={voluntario.fechaIngreso} disabled />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="rutVoluntario">RUT Voluntario</Label>
+                <Input id="rutVoluntario" name="rutVoluntario" value={voluntario.rutVoluntario} disabled />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="direccion">Dirección</Label>
@@ -154,7 +191,21 @@ export default function EditarVoluntarioPage() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tipoSangre">Tipo de Sangre</Label>
-                <Input id="tipoSangre" name="tipoSangre" value={voluntario.tipoSangre} onChange={handleInputChange} />
+                <Select
+                  onValueChange={(value) => setVoluntario(prev => prev ? { ...prev, tipoSangre: value } : null)}
+                  defaultValue={voluntario.tipoSangre}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccione tipo de sangre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposSangre.map((tipo) => (
+                      <SelectItem key={tipo} value={tipo}>
+                        {tipo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="enfermedades">Enfermedades</Label>
@@ -165,16 +216,23 @@ export default function EditarVoluntarioPage() {
                 <Textarea id="alergias" name="alergias" value={voluntario.alergias} onChange={handleInputChange} />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
-                <Input id="fechaIngreso" name="fechaIngreso" type="date" value={voluntario.fechaIngreso} onChange={handleInputChange} />
-              </div>
-              <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="claveRadial">Clave Radial</Label>
                 <Input id="claveRadial" name="claveRadial" value={voluntario.claveRadial} onChange={handleInputChange} />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="rutVoluntario">RUT Voluntario</Label>
-                <Input id="rutVoluntario" name="rutVoluntario" value={voluntario.rutVoluntario} onChange={handleInputChange} />
+                <Label htmlFor="idCargo">Cargo</Label>
+                <Select onValueChange={handleCargoChange} defaultValue={voluntario.idCargo.toString()}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccione un cargo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cargos.map((cargo) => (
+                      <SelectItem key={cargo.idCargo} value={cargo.idCargo.toString()}>
+                        {cargo.nombreCarg}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>

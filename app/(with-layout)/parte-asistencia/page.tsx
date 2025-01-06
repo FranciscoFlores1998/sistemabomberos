@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation";
 
 interface ParteAsistencia {
   folioPAsistencia: number;
@@ -26,9 +27,15 @@ interface ParteAsistencia {
   idTipoLlamado: number;
 }
 
-export default function ParteAsistencia() {
-  const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState<ParteAsistencia[]>([]);
+interface TipoCitacion {
+  idTipoLlamado: number;
+  nombreTipoLlamado: string;
+}
 
+export default function ParteAsistencia() {
+  const router = useRouter();
+  const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState<ParteAsistencia[]>([]);
+ const [tipoLlamado, setTipoLlamado] = useState<TipoCitacion[]>([]);
   useEffect(() => {
     const obtenerParteAsistencia = async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`,
@@ -56,10 +63,31 @@ export default function ParteAsistencia() {
         });
       }
     };
+    const fetchCitacion = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          });
+        if (!response.ok) {
+          throw new Error("Failed to fetch cargos data");
+        }
+        const data = await response.json();
+        setTipoLlamado(data);
+      } catch (error) {
+        console.error("Error fetching cargos:", error);
+      }
+    };
+    fetchCitacion();
     obtenerParteAsistencia();
   }, []);
 
   const handleCrearParte = () => {
+    router.push("/parte-asistencia/crear");
     console.log("Botón 'Crear Parte' presionado");
 
   };
@@ -95,7 +123,10 @@ export default function ParteAsistencia() {
           {parteAsistenciaOptions.map((parte) => (
             <TableRow key={parte.folioPAsistencia}>
               <TableCell>{parte.folioPAsistencia}</TableCell>
-              <TableCell>{parte.idTipoLlamado}</TableCell>
+              {/* {cargoVol.find(cargo => cargo.idCargo === voluntario.idCargo)?.nombreCarg || 'N/A'} */}
+              <TableCell>
+                {/* {parte.idTipoLlamado}</TableCell> */}
+                {tipoLlamado.find( llamado => llamado.idTipoLlamado === parte.idTipoLlamado)?.nombreTipoLlamado|| 'N/A'}</TableCell>
               <TableCell>{parte.aCargoDelCuerpo}</TableCell>
               <TableCell>{parte.aCargoDeLaCompania}</TableCell>
               <TableCell>{parte.fechaAsistencia}</TableCell>

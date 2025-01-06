@@ -29,15 +29,23 @@ interface TipoCitacion {
   nombreTipoLlamado: string;
 }
 
+interface Voluntario {
+  id: number;
+  nombre: string;
+}
+
 export default function CrearParteEmergencia() {
-  const [date, setDate] = useState<Date>(new Date());
   const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([]);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [filteredVoluntariosCuerpo, setFilteredVoluntariosCuerpo] = useState<Voluntario[]>([]);
+  const [filteredVoluntariosCompania, setFilteredVoluntariosCompania] = useState<Voluntario[]>([]);
+  const [date, setDate] = useState<Date>(new Date());
   const router = useRouter();
   const [formData, setFormData] = useState({
     folioPAsistencia: "",
     aCargoDelCuerpo: "",
     aCargoDeLaCompania: "",
-    fechaAsistencia: "",
+    fechaAsistencia: "",	
     horaInicio: "",
     horaFin: "",
     direccionAsistencia: "",
@@ -47,10 +55,15 @@ export default function CrearParteEmergencia() {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string | Date,
     name?: string
   ) => {
-    if (typeof e === "string" && name) {
+    if (e instanceof Date && name) {
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: e,
+      }));
+    } else if (typeof e === "string" && name) {
       setFormData((prevState) => ({
         ...prevState,
         [name]: e,
@@ -70,7 +83,6 @@ export default function CrearParteEmergencia() {
     e.preventDefault();
     console.log(formData);
     formData.fechaAsistencia = formatearFecha(date.toISOString());
-
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/crear`,
@@ -109,34 +121,66 @@ export default function CrearParteEmergencia() {
   };
 
   useEffect(() => {
-    const obtenerTipoLlamado = async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }
-      );
+    const obtenerDatos = async () => {
+      try {
+        // Obtener tipo de llamado
+        const responseTipoLlamado = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }
+        );
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        setTipoCitacion(data);
-      } else {
-        const errorData = await response.json();
+        if (responseTipoLlamado.ok) {
+          const dataTipoLlamado = await responseTipoLlamado.json();
+          setTipoCitacion(dataTipoLlamado);
+        } else {
+          toast({
+            title: "Error",
+            description: "Hubo un error al obtener el tipo de citación.",
+            variant: "destructive",
+          });
+        }
+
+        // Obtener voluntarios
+        const responseVoluntarios = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }
+        );
+
+        if (responseVoluntarios.ok) {
+          const dataVoluntarios = await responseVoluntarios.json();
+          setVoluntarios(dataVoluntarios);
+        } else {
+          toast({
+            title: "Error",
+            description: "Hubo un error al obtener la lista de voluntarios.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
         toast({
           title: "Error",
-          description:
-            errorData.error || "Hubo un error al obtener el tipo de citación.",
+          description: "Hubo un error al conectar con el servidor.",
           variant: "destructive",
         });
       }
     };
-    obtenerTipoLlamado();
+
+    obtenerDatos();
   }, []);
+
   return (
     <div className="container mx-auto py-10">
       <Card className="w-full max-w-2xl mx-auto">
@@ -149,21 +193,16 @@ export default function CrearParteEmergencia() {
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="idTipoLlamado">Tipo de llamado</Label>
                 <Select
-                  onValueChange={(value) =>
-                    handleChange(value, "idTipoLlamado")
-                  }
+                  onValueChange={(value) => handleChange(value, "idTipoLlamado")}
                   value={formData.idTipoLlamado}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccione un material peligroso" />
+                    <SelectValue placeholder="Seleccione el tipo de llamado" />
                   </SelectTrigger>
                   <SelectContent>
-                    {tipoCitacion.map((llamado) => (
-                      <SelectItem
-                        key={llamado.idTipoLlamado}
-                        value={llamado.idTipoLlamado.toString()}
-                      >
-                        {llamado.nombreTipoLlamado}
+                    {tipoCitacion.map((tipo) => (
+                      <SelectItem key={tipo.idTipoLlamado} value={tipo.idTipoLlamado.toString()}>
+                        {tipo.nombreTipoLlamado}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -202,9 +241,10 @@ export default function CrearParteEmergencia() {
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <DatePicker
-                  date={date}
-                  setDate={(date) => setDate(date || new Date())}
+                <Label htmlFor="fechaAsistencia">Fecha de Asistencia</Label>
+                <DatePicker                
+                date={date}
+                setDate={(date) => setDate(date || new Date())}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -228,17 +268,17 @@ export default function CrearParteEmergencia() {
                   onChange={handleChange}
                   required
                 />
+                
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDeLaCompania">
-                  Oficial a cargo del compañía
+                  Oficial a cargo de la compañía
                 </Label>
                 <Input
                   id="aCargoDeLaCompania"
                   name="aCargoDeLaCompania"
                   value={formData.aCargoDeLaCompania}
                   onChange={handleChange}
-                  required
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -264,3 +304,4 @@ export default function CrearParteEmergencia() {
     </div>
   );
 }
+
