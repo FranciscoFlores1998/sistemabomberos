@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -15,7 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Search, UserPlus } from 'lucide-react';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface VoluntarioData {
   idVoluntario: number;
@@ -156,7 +157,6 @@ export default function Busqueda() {
       if (!response.ok) {
         throw new Error('Failed to delete volunteer');
       }
-      // Remove the deleted volunteer from the state
       setAllVoluntarios(prev => prev.filter(v => v.idVoluntario !== id));
       setFilteredVoluntarios(prev => prev.filter(v => v.idVoluntario !== id));
     } catch (error) {
@@ -238,13 +238,11 @@ export default function Busqueda() {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/voluntario/editar/${voluntario.idVoluntario}`)}
-                          >
-                            Editar
-                          </Button>
+                        <Link href={`/busqueda/editar/${voluntario.idVoluntario}`} passHref>
+                            <Button variant="outline" size="sm">
+                              Editar
+                            </Button>
+                          </Link>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="destructive" size="sm">
