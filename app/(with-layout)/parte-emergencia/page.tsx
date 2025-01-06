@@ -2,6 +2,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -25,15 +26,57 @@ interface ParteEmergencia {
   direccionEmergencia: string;
   idOficial: number;
   idClaveEmergencia: number;
+  nombreClaveEmergencia?: string;
 }
 
 export default function ParteEmergencia() {
   const [parteEmergenciaOptions, setParteEmergenciaOptions] = useState<ParteEmergencia[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const obtenerParteEmergencia = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/obtener`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data: ParteEmergencia[] = await response.json();
+          
+          // Fetch the name for each emergency key
+          const partesConNombres = await Promise.all(data.map(async (parte) => {
+            const nombreClave = await obtenerNombreClaveEmergencia(parte.idClaveEmergencia);
+            return { ...parte, nombreClaveEmergencia: nombreClave };
+          }));
+
+          setParteEmergenciaOptions(partesConNombres);
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Hubo un error al obtener el parte de emergencia.");
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Hubo un error al obtener el parte de emergencia.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    obtenerParteEmergencia();
+  }, []);
+
+  const obtenerNombreClaveEmergencia = async (id: number): Promise<string> => {
+    try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/obtener`,
+        `${process.env.NEXT_PUBLIC_API_URL}/claveEmergencia/buscar/${id}`,
         {
           method: "GET",
           headers: {
@@ -45,24 +88,18 @@ export default function ParteEmergencia() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
-        setParteEmergenciaOptions(data);
+        return data.nombreClaveEmergencia;
       } else {
-        const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener el parte de emergencia.",
-          variant: "destructive",
-        });
+        throw new Error("No se pudo obtener el nombre de la clave de emergencia");
       }
-    };
-    obtenerParteEmergencia();
-  }, []);
+    } catch (error) {
+      console.error("Error al obtener el nombre de la clave de emergencia:", error);
+      return "Desconocido";
+    }
+  };
 
   const handleCrearParte = () => {
-    console.log("Botón 'Crear Parte' presionado");
+    router.push('/parte-emergencia/crear');
   };
 
   return (
@@ -90,7 +127,7 @@ export default function ParteEmergencia() {
                 <TableHead>Folio P. Asistencia</TableHead>
                 <TableHead>Dirección Emergencia</TableHead>
                 <TableHead>ID Oficial</TableHead>
-                <TableHead>ID Clave Emergencia</TableHead>
+                <TableHead>Clave Emergencia</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -106,7 +143,7 @@ export default function ParteEmergencia() {
                   <TableCell>{parte.folioPAsistencia || 'N/A'}</TableCell>
                   <TableCell>{parte.direccionEmergencia}</TableCell>
                   <TableCell>{parte.idOficial}</TableCell>
-                  <TableCell>{parte.idClaveEmergencia}</TableCell>
+                  <TableCell>{parte.nombreClaveEmergencia || 'Desconocido'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -116,3 +153,4 @@ export default function ParteEmergencia() {
     </div>
   )
 }
+

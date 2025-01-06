@@ -34,8 +34,6 @@ export default function CrearParteEmergencia() {
   const [date, setDate] = useState<Date>(new Date());
   const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState([]);
   const [materialesPeligrosos, setMaterialesPeligrosos] = useState<MaterialPeligroso[]>([]);
-  const [voluntarios, setVoluntarios] = useState([]);
-  const [claveemergencia, setClaveEmergencia] = useState([]);
   const router = useRouter();
   const [formData, setFormData] = useState({
     horaInicio: "",
@@ -116,118 +114,23 @@ export default function CrearParteEmergencia() {
 
   useEffect(() => {
     const obtenerParteAsistencia = async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }
-      );
-
+      const response = await fetch("/api/parte-asistencia/obtener");
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
         setParteAsistenciaOptions(data);
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener el parte de asistencia.",
-          variant: "destructive",
-        });
       }
     };
-
 
     const obtenerMaterialesPeligrosos = async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materialP/obtener`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }
-      );
-
+      const response = await fetch("/api/materialP/obtener");
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
         setMaterialesPeligrosos(data);
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener los materiales peligrosos.",
-          variant: "destructive",
-        });
       }
     };
 
-    const obtenerVoluntarios = async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        setVoluntarios(data);
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener los voluntarios.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    const obtenerClaveEmergencia = async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/claveEmergencia/obtener`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        setClaveEmergencia(data);
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener claveEmergencia.",
-          variant: "destructive",
-        });
-      }
-    };
-    
-    obtenerClaveEmergencia();
-    obtenerVoluntarios();
-    obtenerMaterialesPeligrosos();
     obtenerParteAsistencia();
+    obtenerMaterialesPeligrosos();
   }, []);
 
   return (
@@ -239,11 +142,9 @@ export default function CrearParteEmergencia() {
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
-            
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="horaInicio">Hora de Inicio</Label>
+              <div>
+                <Label>Hora de Inicio</Label>
                 <Input
-                  id="horaInicio"
                   name="horaInicio"
                   type="time"
                   value={formData.horaInicio}
@@ -251,10 +152,9 @@ export default function CrearParteEmergencia() {
                   required
                 />
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="horaFin">Hora de Fin</Label>
+              <div>
+                <Label>Hora de Fin</Label>
                 <Input
-                  id="horaFin"
                   name="horaFin"
                   type="time"
                   value={formData.horaFin}
@@ -262,105 +162,62 @@ export default function CrearParteEmergencia() {
                   required
                 />
               </div>
-              <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="horaFin">Fecha</Label>
+              <div>
+                <Label>Fecha</Label>
                 <DatePicker
                   date={date}
                   setDate={(date) => setDate(date || new Date())}
                 />
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="preInforme">Pre-Informe</Label>
+              <div>
+                <Label>Pre-Informe</Label>
                 <Textarea
-                  id="preInforme"
                   name="preInforme"
                   value={formData.preInforme}
                   onChange={handleChange}
                   required
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="llamarEmpresaQuimica"
-                  checked={formData.llamarEmpresaQuimica}
-                  onCheckedChange={(checked) =>
-                    handleChange(checked, "llamarEmpresaQuimica")
-                  }
-                />
-                <Label htmlFor="llamarEmpresaQuimica">Llamar Empresa Química</Label>
-              </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="descripcionMaterialP">Descripción material peligroso</Label>
+              <div>
+                <Label>Descripción Material Peligroso</Label>
                 <Textarea
-                  id="descripcionMaterialP"
                   name="descripcionMaterialP"
                   value={formData.descripcionMaterialP}
                   onChange={handleChange}
                   required
                 />
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="direccionEmergencia">Dirección de Emergencia</Label>
+              <div>
+                <Label>Dirección Emergencia</Label>
                 <Input
-                  id="direccionEmergencia"
                   name="direccionEmergencia"
                   value={formData.direccionEmergencia}
                   onChange={handleChange}
                   required
                 />
               </div>
-
-
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="idOficial">Oficial</Label>
-                <Select
-                  onValueChange={(value) =>
-                    handleChange(value, "idOficial")
-                  }
-                  value={formData.idVoluntario}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccione un Oficial" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voluntarios.map((option) => (
-                      <SelectItem
-                        key={option.idVoluntario}
-                        value={option.idVoluntario.toString()}
-                      >
-                        {option.idVoluntario} - {option.nombreVol}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div>
+                <Label>ID Oficial</Label>
+                <Input
+                  name="idOficial"
+                  type="number"
+                  value={formData.idOficial}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="idClaveEmergencia">Clave Emergencia</Label>
-                <Select
-                  onValueChange={(value) =>
-                    handleChange(value, "idClaveEmergencia")
-                  }
+              <div>
+                <Label>ID Clave Emergencia</Label>
+                <Input
+                  name="idClaveEmergencia"
+                  type="number"
                   value={formData.idClaveEmergencia}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccione Clave Emergencia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {claveemergencia.map((option) => (
-                      <SelectItem
-                        key={option.idClaveEmergencia}
-                        value={option.idClaveEmergencia.toString()}
-                      >
-                        {option.idClaveEmergencia} - {option.nombreClaveEmergencia}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={handleChange}
+                  required
+                />
               </div>
-
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="folioPAsistencia">Folio P. Asistencia</Label>
+              <div>
+                <Label>Folio P. Asistencia</Label>
                 <Select
                   onValueChange={(value) =>
                     handleChange(value, "folioPAsistencia")
@@ -376,11 +233,20 @@ export default function CrearParteEmergencia() {
                         key={option.folioPAsistencia}
                         value={option.folioPAsistencia.toString()}
                       >
-                        {option.folioPAsistencia} - {option.observaciones}
+                        {option.folioPAsistencia}
                       </SelectItem>
                     ))}
-                  </SelectContent>  
+                  </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={formData.llamarEmpresaQuimica}
+                  onCheckedChange={(checked) =>
+                    handleChange(checked, "llamarEmpresaQuimica")
+                  }
+                />
+                <Label>Llamar Empresa Química</Label>
               </div>
             </div>
           </form>
@@ -395,4 +261,3 @@ export default function CrearParteEmergencia() {
     </div>
   );
 }
-
