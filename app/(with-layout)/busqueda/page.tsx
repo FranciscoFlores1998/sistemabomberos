@@ -1,16 +1,21 @@
-'use client'
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, UserPlus } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface VoluntarioData {
   idVoluntario: number;
@@ -29,25 +34,96 @@ interface VoluntarioData {
   idCargo: number;
 }
 
+interface CargoData {
+  idCargo: number;
+  nombreCarg: string;
+}
+
+interface CompaniaData {
+  idCompania: number;
+  nombreCia: string;
+}
+
 export default function Busqueda() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [voluntario, setVoluntario] = useState<VoluntarioData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [allVoluntarios, setAllVoluntarios] = useState<VoluntarioData[]>([]);
+  const [filteredVoluntarios, setFilteredVoluntarios] = useState<VoluntarioData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cargoVol, setCargoVol] = useState<CargoData[]>([]);
+  const [companiaVol, setCompaniaVol] = useState<CompaniaData[]>([]);
 
-  const fetchVoluntario = async (searchTerm: string) => {
+  useEffect(() => {
+    fetchAllVoluntarios();
+    fetchCargos();
+    fetchCompanias();
+  }, []);
+
+  const fetchCargos = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cargo/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+      if (!response.ok) {
+        throw new Error("Failed to fetch cargos data");
+      }
+      const data = await response.json();
+      setCargoVol(data);
+    } catch (error) {
+      console.error("Error fetching cargos:", error);
+    }
+  };
+
+  const fetchCompanias = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compania/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch compañias data");
+      }
+      const data = await response.json();
+      setCompaniaVol(data);
+    } catch (error) {
+      console.error("Error fetching compañias:", error);
+    }
+  };
+
+
+  const fetchAllVoluntarios = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntarios?search=${encodeURIComponent(searchTerm)}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (!response.ok) {
-        throw new Error('Failed to fetch volunteer data');
+        throw new Error("Failed to fetch volunteers data");
       }
       const data = await response.json();
-      setVoluntario(data);
+      setAllVoluntarios(data);
+      setFilteredVoluntarios(data);
     } catch (err) {
-      setError('Error fetching volunteer data. Please try again.');
+      setError("Error fetching volunteers data. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -56,16 +132,48 @@ export default function Busqueda() {
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    fetchVoluntario(searchTerm);
+    const filtered = allVoluntarios.filter(
+      (voluntario) =>
+        voluntario.nombreVol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        voluntario.rutVoluntario.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredVoluntarios(filtered);
   };
 
   const handleCreateVolunteer = () => {
-    router.push('/voluntario/crear');
+    router.push("/voluntario/crear");
   };
+
+  const handleDeleteVolunteer = async (id: number) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/eliminar/${id}`, {
+        method: 'DELETE',
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete volunteer');
+      }
+      // Remove the deleted volunteer from the state
+      setAllVoluntarios(prev => prev.filter(v => v.idVoluntario !== id));
+      setFilteredVoluntarios(prev => prev.filter(v => v.idVoluntario !== id));
+    } catch (error) {
+      console.error('Error deleting volunteer:', error);
+      setError('Error deleting volunteer. Please try again.');
+    }
+  };
+
+  useEffect(() => {
+    if (cargoVol.length > 0 && companiaVol.length > 0) {
+      setFilteredVoluntarios(prevFiltered => [...prevFiltered]);
+    }
+  }, [cargoVol, companiaVol]);
 
   return (
     <div className="container mx-auto py-10">
-      <Card className="w-full max-w-2xl mx-auto mb-6">
+      <Card className="w-full max-w-7xl mx-auto mb-6">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Gestión de Voluntarios</CardTitle>
           <Button onClick={handleCreateVolunteer}>
@@ -74,7 +182,7 @@ export default function Busqueda() {
           </Button>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="flex items-center space-x-2">
+          <form onSubmit={handleSearch} className="flex items-center space-x-2 mb-6">
             <div className="relative flex-grow">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -86,53 +194,88 @@ export default function Busqueda() {
               />
             </div>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Buscando...' : 'Buscar'}
+              {loading ? "Buscando..." : "Buscar"}
             </Button>
           </form>
+
+          {error && (
+            <p className="text-red-500 mb-4">{error}</p>
+          )}
+
+          {loading ? (
+            <p className="text-center">Cargando datos de voluntarios...</p>
+          ) : (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <Table>
+                <TableCaption>Lista de voluntarios</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>RUT</TableHead>
+                    <TableHead>Fecha de Nacimiento</TableHead>
+                    <TableHead>Número de Contacto</TableHead>
+                    <TableHead>Tipo de Sangre</TableHead>
+                    <TableHead>Clave Radial</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Compañía</TableHead>
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredVoluntarios.map((voluntario) => (
+                    <TableRow key={voluntario.idVoluntario}>
+                      <TableCell>{voluntario.nombreVol}</TableCell>
+                      <TableCell>{voluntario.rutVoluntario}</TableCell>
+                      <TableCell>{voluntario.fechaNac}</TableCell>
+                      <TableCell>{voluntario.numeroContacto}</TableCell>
+                      <TableCell>{voluntario.tipoSangre}</TableCell>
+                      <TableCell>{voluntario.claveRadial}</TableCell>
+                      <TableCell>
+                        {cargoVol.find(cargo => cargo.idCargo === voluntario.idCargo)?.nombreCarg || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {companiaVol.find(compania => compania.idCompania === parseInt(voluntario.idCompania))?.nombreCia || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/voluntario/editar/${voluntario.idVoluntario}`)}
+                          >
+                            Editar
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                Eliminar
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta acción no se puede deshacer. Esto eliminará permanentemente al voluntario {voluntario.nombreVol}.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteVolunteer(voluntario.idVoluntario)}>
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {error && (
-        <Card className="w-full max-w-2xl mx-auto mb-6">
-          <CardContent>
-            <p className="text-red-500">{error}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {voluntario && (
-        <Card className="w-full max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle>Datos del Voluntario</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid w-full items-center gap-4">
-              <DataItem label="Nombre" value={voluntario.nombreVol} />
-              <DataItem label="Fecha de Nacimiento" value={voluntario.fechaNac} />
-              <DataItem label="Dirección" value={voluntario.direccion} />
-              <DataItem label="Número de Contacto" value={voluntario.numeroContacto} />
-              <DataItem label="Tipo de Sangre" value={voluntario.tipoSangre} />
-              <DataItem label="Enfermedades" value={voluntario.enfermedades || "Ninguna"} />
-              <DataItem label="Alergias" value={voluntario.alergias || "Ninguna"} />
-              <DataItem label="Fecha de Ingreso" value={voluntario.fechaIngreso} />
-              <DataItem label="Clave Radial" value={voluntario.claveRadial} />
-              <DataItem label="Cargo Voluntario" value={voluntario.idCargo.toString()} />
-              <DataItem label="RUT Voluntario" value={voluntario.rutVoluntario} />
-              <DataItem label="ID Compañía" value={voluntario.idCompania} />
-              <DataItem label="ID Usuario" value={voluntario.idUsuario || "No asignado"} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function DataItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col space-y-1.5">
-      <span className="font-semibold text-sm text-gray-500">{label}</span>
-      <span className="text-base">{value}</span>
     </div>
   );
 }

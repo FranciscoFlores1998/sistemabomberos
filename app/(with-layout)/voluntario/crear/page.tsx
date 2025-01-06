@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,19 +23,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePickerPast } from "@/components/ui/datepicker-past";
+import { validateRut } from "@/lib/rutValidation";
 
 // Datos de muestra para los selectores
-const tiposSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
-const cargosVoluntario = ['Bombero', 'Conductor', 'Oficial', 'Comandante']
-const companias = [
-  { id: 1, nombre: 'Compañía 1' },
-  { id: 2, nombre: 'Compañía 2' },
-  { id: 3, nombre: 'Compañía 3' },
-]
+const tiposSangre = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+interface Compania {
+  idCompania: number;
+  nombreCia: string;
+  direccionCia: string;
+  especialidad: string;
+  idCuerpo: number;
+}
+interface Cargo {
+  idCargo: number;
+  nombreCarg: string;
+}
 
 export default function CrearVoluntario() {
-  const [fechaNac, setFechaNac] = useState<Date>(new Date());
-  const [fechaIngreso, setFechaIngreso] = useState<Date>(new Date());
+  const [companiaVol, setCompanias] = useState<Compania[]>([]);
+  const [cargoVol, setCargos] = useState<Cargo[]>([]);
+  const [isRutValid, setIsRutValid] = useState(true);
+  const [dateNac, setDateNac] = useState<Date>(new Date());
+  const [dateIng, setDateIng] = useState<Date>(new Date());
   const router = useRouter();
   const [formData, setFormData] = useState({
     nombreVol: "",
@@ -48,10 +58,10 @@ export default function CrearVoluntario() {
     enfermedades: "",
     alergias: "",
     claveRadial: "",
-    cargoVoluntario: "",
+    idCargo: "",
     rutVoluntario: "",
     idCompania: "",
-    idUsuario: "",
+    idUsuario: null,
   });
 
   const handleChange = (
@@ -63,6 +73,9 @@ export default function CrearVoluntario() {
         ...prevState,
         [name]: e,
       }));
+      if (name === "rutVoluntario") {
+        setIsRutValid(validateRut(e));
+      }
     } else {
       const { name, value } = (
         e as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -71,36 +84,42 @@ export default function CrearVoluntario() {
         ...prevState,
         [name]: value,
       }));
+      if (name === "rutVoluntario") {
+        setIsRutValid(validateRut(value));
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const dataToSubmit = {
-      ...formData,
-    };
-    console.log(dataToSubmit);
+    console.log(formData);
+    formData.fechaIngreso = formatearFecha(dateIng.toISOString());
+    formData.fechaNac = formatearFecha(dateNac.toISOString());
 
     try {
-      const response = await fetch(`localhost:3000/perfil`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dataToSubmit),
-      });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/crear`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (response.ok) {
         toast({
-          title: "Voluntario registrado",
+          title: "Voluntario a sido registrado",
           description: "El voluntario se ha registrado exitosamente.",
         });
-        router.push("/voluntarios");
+        router.push("/voluntario");
       } else {
         const errorData = await response.json();
         toast({
           title: "Error",
-          description: errorData.error || "Hubo un error al registrar el voluntario.",
+          description:
+            errorData.error || "Hubo un error al registrar el voluntario.",
           variant: "destructive",
         });
       }
@@ -113,6 +132,58 @@ export default function CrearVoluntario() {
     }
   };
 
+  useEffect(() => {
+    const obtenerCompanias = async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/compania/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCompanias(data);
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description:
+            errorData.error || "Hubo un error al cargar las compañías.",
+          variant: "destructive",
+        });
+      }
+    };
+    const obtenerCargos = async () => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cargo/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCargos(data);
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.error || "Hubo un error al cargar los cargos.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    obtenerCargos();
+    obtenerCompanias();
+  }, []);
+
   return (
     <div className="container mx-auto py-10">
       <Card className="w-full max-w-2xl mx-auto">
@@ -122,6 +193,7 @@ export default function CrearVoluntario() {
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
+              
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="nombreVol">Nombre</Label>
                 <Input
@@ -144,14 +216,9 @@ export default function CrearVoluntario() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaNac">Fecha de Nacimiento</Label>
-                <Input
-                  type="date"
-                  id="fechaNac"
-                  name="fechaNac"
-                  value={formData.fechaNac}
-                  onChange={(e) => handleChange(e)}
-                  required
-                />
+                <DatePickerPast
+                date={dateNac}
+                setDate={(date) => setDateNac(date || new Date())}/>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="direccion">Dirección</Label>
@@ -173,43 +240,51 @@ export default function CrearVoluntario() {
                   required
                 />
               </div>
-              
+
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
-                <Input
-                  type="date"
-                  id="fechaIngreso"
-                  name="fechaIngreso"
-                  value={formData.fechaIngreso}
-                  onChange={(e) => handleChange(e)}
-                  required
-                />
+                <DatePickerPast
+                date={dateIng}
+                setDate={(date) => setDateIng(date || new Date())}/>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="idCompania">Compañía</Label>
-                <Select onValueChange={(value) => handleChange(value, "idCompania")} value={formData.idCompania}>
+                <Select
+                  onValueChange={(value) => handleChange(value, "idCompania")}
+                  value={formData.idCompania}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccione compañía" />
                   </SelectTrigger>
                   <SelectContent>
-                    {companias.map((compania) => (
-                      <SelectItem key={compania.id} value={compania.id.toString()}>
-                        {compania.nombre}
+                    {companiaVol.map((compania) => (
+                      <SelectItem
+                        key={compania.idCompania}
+                        value={compania.idCompania.toString()}
+                      >
+                        {compania.nombreCia}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="cargoVoluntario">Cargo Voluntario</Label>
-                <Select onValueChange={(value) => handleChange(value, "cargoVoluntario")} value={formData.cargoVoluntario}>
+                <Label htmlFor="idCargo">Cargo Voluntario</Label>
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "idCargo")
+                  }
+                  value={formData.idCargo}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccione cargo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cargosVoluntario.map((cargo) => (
-                      <SelectItem key={cargo} value={cargo}>
-                        {cargo}
+                    {cargoVol.map((cargo) => (
+                      <SelectItem 
+                      key={cargo.idCargo} 
+                      value={cargo.idCargo.toString()}> 
+                        {cargo.nombreCarg}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -227,7 +302,10 @@ export default function CrearVoluntario() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tipoSangre">Tipo de Sangre</Label>
-                <Select onValueChange={(value) => handleChange(value, "tipoSangre")} value={formData.tipoSangre}>
+                <Select
+                  onValueChange={(value) => handleChange(value, "tipoSangre")}
+                  value={formData.tipoSangre}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccione tipo de sangre" />
                   </SelectTrigger>
@@ -271,4 +349,3 @@ export default function CrearVoluntario() {
     </div>
   );
 }
-

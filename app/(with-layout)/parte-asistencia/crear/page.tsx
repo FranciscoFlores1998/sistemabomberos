@@ -24,13 +24,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface TipoCitacion {
+  idTipoLlamado: number;
+  nombreTipoLlamado: string;
+}
+
 export default function CrearParteEmergencia() {
   const [date, setDate] = useState<Date>(new Date());
-  const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState([]);
+  const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([]);
   const router = useRouter();
   const [formData, setFormData] = useState({
     folioPAsistencia: "",
-    tipoLlamado: "",
     aCargoDelCuerpo: "",
     aCargoDeLaCompania: "",
     fechaAsistencia: "",
@@ -39,8 +43,8 @@ export default function CrearParteEmergencia() {
     direccionAsistencia: "",
     totalAsistencia: "",
     observaciones: "",
+    idTipoLlamado: "",
   });
-
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
@@ -68,14 +72,17 @@ export default function CrearParteEmergencia() {
     formData.fechaAsistencia = formatearFecha(date.toISOString());
 
     try {
-      const response = await fetch("/api/parte-asistencia/crear", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/crear`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (response.ok) {
         toast({
@@ -88,7 +95,7 @@ export default function CrearParteEmergencia() {
         toast({
           title: "Error",
           description:
-            errorData.error || "Hubo un error al crear el parte de emergencia.",
+            errorData.error || "Hubo un error al crear el parte de asistencia.",
           variant: "destructive",
         });
       }
@@ -102,8 +109,9 @@ export default function CrearParteEmergencia() {
   };
 
   useEffect(() => {
-    const obtenerParteAsistencia = async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`,
+    const obtenerTipoLlamado = async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
         {
           method: "GET",
           headers: {
@@ -116,19 +124,18 @@ export default function CrearParteEmergencia() {
       if (response.ok) {
         const data = await response.json();
         console.log(data);
-        setParteAsistenciaOptions(data);
+        setTipoCitacion(data);
       } else {
         const errorData = await response.json();
         toast({
           title: "Error",
           description:
-            errorData.error ||
-            "Hubo un error al obtener el parte de asistencia.",
+            errorData.error || "Hubo un error al obtener el tipo de citación.",
           variant: "destructive",
         });
       }
     };
-    obtenerParteAsistencia();
+    obtenerTipoLlamado();
   }, []);
   return (
     <div className="container mx-auto py-10">
@@ -140,11 +147,34 @@ export default function CrearParteEmergencia() {
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="tipoLlamado">Tipo de llamado</Label>
+                <Label htmlFor="idTipoLlamado">Tipo de llamado</Label>
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "idTipoLlamado")
+                  }
+                  value={formData.idTipoLlamado}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccione un material peligroso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tipoCitacion.map((llamado) => (
+                      <SelectItem
+                        key={llamado.idTipoLlamado}
+                        value={llamado.idTipoLlamado.toString()}
+                      >
+                        {llamado.nombreTipoLlamado}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="direccionAsistencia">Dirección</Label>
                 <Input
-                  id="tipoLlamado"
-                  name="tipoLlamado"
-                  value={formData.tipoLlamado}
+                  id="direccionAsistencia"
+                  name="direccionAsistencia"
+                  value={formData.direccionAsistencia}
                   onChange={handleChange}
                   required
                 />
@@ -188,7 +218,9 @@ export default function CrearParteEmergencia() {
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="aCargoDelCuerpo">Oficial a cargo del cuerpo</Label>
+                <Label htmlFor="aCargoDelCuerpo">
+                  Oficial a cargo del cuerpo
+                </Label>
                 <Input
                   id="aCargoDelCuerpo"
                   name="aCargoDelCuerpo"
@@ -198,7 +230,9 @@ export default function CrearParteEmergencia() {
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="aCargoDeLaCompania">Oficial a cargo del compañía</Label>
+                <Label htmlFor="aCargoDeLaCompania">
+                  Oficial a cargo del compañía
+                </Label>
                 <Input
                   id="aCargoDeLaCompania"
                   name="aCargoDeLaCompania"
@@ -208,42 +242,11 @@ export default function CrearParteEmergencia() {
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-                {/* <Label htmlFor="folioPAsistencia">Folio P. Asistencia</Label>
+                <Label htmlFor="totalAsistencia">Total de asistencia</Label>
                 <Input
-                  id="folioPAsistencia"
-                  name="folioPAsistencia"
-                  value={formData.folioPAsistencia}
-                  onChange={handleChange}
-                  required
-                /> */}
-                <Label htmlFor="folioPAsistencia">Folio P. Emergencia</Label>
-                <Select
-                  onValueChange={(value) =>
-                    handleChange(value, "folioPAsistencia")
-                  }
-                  value={formData.folioPAsistencia}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccione un folio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {parteAsistenciaOptions.map((option) => (
-                      <SelectItem
-                        key={option.folioPAsistencia}
-                        value={option.folioPAsistencia.toString()}
-                      >
-                        {option.folioPAsistencia} - {option.observaciones}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="direccionAsistencia">Dirección</Label>
-                <Input
-                  id="direccionAsistencia"
-                  name="direccionAsistencia"
-                  value={formData.direccionAsistencia}
+                  id="totalAsistencia"
+                  name="totalAsistencia"
+                  value={formData.totalAsistencia}
                   onChange={handleChange}
                   required
                 />

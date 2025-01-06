@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface VoluntarioData {
-  idVoluntario: string;
+  idVoluntario: number;
   nombreVol: string;
   fechaNac: string;
   direccion: string;
@@ -22,10 +22,10 @@ interface VoluntarioData {
   alergias: string;
   fechaIngreso: string;
   claveRadial: string;
-  cargoVoluntario: string;
   rutVoluntario: string;
   idCompania: string;
   idUsuario: string;
+  idCargo: number;
 }
 
 export default function Voluntario() {
@@ -39,7 +39,15 @@ export default function Voluntario() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntarios/me`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/buscar/1`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }
+        );
         if (!response.ok) {
           throw new Error('Failed to fetch logged-in volunteer data');
         }
@@ -58,7 +66,7 @@ export default function Voluntario() {
 
   const handleEditar = () => {
     if (voluntario) {
-      router.push(`/voluntario/editar/${voluntario.idVoluntario}`);
+      router.push(`/voluntario/buscar/${voluntario.idVoluntario}`);
     }
   };
 
@@ -115,7 +123,7 @@ export default function Voluntario() {
             <DataItem label="Alergias" value={voluntario.alergias || "Ninguna"} />
             <DataItem label="Fecha de Ingreso" value={voluntario.fechaIngreso} />
             <DataItem label="Clave Radial" value={voluntario.claveRadial} />
-            <DataItem label="Cargo Voluntario" value={voluntario.cargoVoluntario} />
+            <DataItem label="Cargo Voluntario" value={voluntario.idCargo.toExponential()} />
             <DataItem label="RUT Voluntario" value={voluntario.rutVoluntario} />
             <DataItem label="ID Compañía" value={voluntario.idCompania} />
             <DataItem label="ID Usuario" value={voluntario.idUsuario || "No asignado"} />

@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button"
 
 interface ParteAsistencia {
   folioPAsistencia: number;
-  tipoLlamado: string;
   aCargoDelCuerpo: string;
   aCargoDeLaCompania: string;
   fechaAsistencia: string;
@@ -24,6 +23,7 @@ interface ParteAsistencia {
   direccionAsistencia: string;
   totalAsistencia: number;
   observaciones: string;
+  idTipoLlamado: number;
 }
 
 export default function ParteAsistencia() {
@@ -95,7 +95,7 @@ export default function ParteAsistencia() {
           {parteAsistenciaOptions.map((parte) => (
             <TableRow key={parte.folioPAsistencia}>
               <TableCell>{parte.folioPAsistencia}</TableCell>
-              <TableCell>{parte.tipoLlamado}</TableCell>
+              <TableCell>{parte.idTipoLlamado}</TableCell>
               <TableCell>{parte.aCargoDelCuerpo}</TableCell>
               <TableCell>{parte.aCargoDeLaCompania}</TableCell>
               <TableCell>{parte.fechaAsistencia}</TableCell>
