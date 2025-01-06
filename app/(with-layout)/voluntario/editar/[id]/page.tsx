@@ -90,7 +90,7 @@ export default function EditarVoluntario() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/actualizar/${voluntario?.rutVoluntario.toString()}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/actualizar/${voluntario?.idVoluntario.toString()}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -66,7 +66,7 @@ export default function Voluntario() {
 
   const handleEditar = () => {
     if (voluntario) {
-      router.push(`/voluntario/buscar/${voluntario.idVoluntario}`);
+      router.push(`/voluntario/editar/${voluntario.idVoluntario}`);
     }
   };
 
