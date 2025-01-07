@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
 import { DatePicker } from "@/components/ui/datepicker";
 import { formatearFecha } from "@/lib/formatearFecha";
 import {
@@ -24,20 +22,50 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import toast, { Toaster } from "react-hot-toast";
 
 interface MaterialPeligroso {
   idMaterialP: number;
   clasificacion: string;
 }
 
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+}
+
+interface ClaveEmergencia {
+  idClaveEmergencia: number;
+  nombreClaveEmergencia: string;
+}
+
+interface ParteAsistencia {
+  folioPAsistencia: number;
+  observaciones: string;
+}
+
+interface FormData {
+  horaInicio: string;
+  horaFin: string;
+  fechaEmergencia: string;
+  preInforme: string;
+  llamarEmpresaQuimica: boolean;
+  descripcionMaterialP: string;
+  direccionEmergencia: string;
+  idOficial: string;
+  idClaveEmergencia: string;
+  folioPAsistencia: string | null;
+  idMaterialP: string | null;
+  isDescripcionDisabled: boolean;
+}
+
 export default function CrearParteEmergencia() {
   const [date, setDate] = useState<Date>(new Date());
-  const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState([]);
+  const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState<ParteAsistencia[]>([]);
   const [materialesPeligrosos, setMaterialesPeligrosos] = useState<MaterialPeligroso[]>([]);
-  const [voluntarios, setVoluntarios] = useState([]);
-  const [claveemergencia, setClaveEmergencia] = useState([]);
-  const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [claveemergencia, setClaveEmergencia] = useState<ClaveEmergencia[]>([]);
+  const [formData, setFormData] = useState<FormData>({
     horaInicio: "",
     horaFin: "",
     fechaEmergencia: "",
@@ -47,7 +75,9 @@ export default function CrearParteEmergencia() {
     direccionEmergencia: "",
     idOficial: "",
     idClaveEmergencia: "",
-    folioPAsistencia: "",
+    folioPAsistencia: null,
+    idMaterialP: null,
+    isDescripcionDisabled: true,
   });
 
   const handleChange = (
@@ -60,14 +90,22 @@ export default function CrearParteEmergencia() {
         [name]: e,
       }));
     } else if (typeof e === "string" && name) {
-      setFormData((prevState) => ({
-        ...prevState,
-        [name]: e,
-      }));
-    } else {
-      const { name, value } = (
-        e as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      ).target;
+      if (name === "idMaterialP") {
+        const isNoneSelected = e === "null";
+        setFormData((prevState) => ({
+          ...prevState,
+          [name]: isNoneSelected ? null : e,
+          isDescripcionDisabled: isNoneSelected,
+          descripcionMaterialP: isNoneSelected ? "" : prevState.descripcionMaterialP,
+        }));
+      } else {
+        setFormData((prevState) => ({
+          ...prevState,
+          [name]: e === "null" ? null : e,
+        }));
+      }
+    } else if (e && typeof e === 'object' && 'target' in e) {
+      const { name, value } = e.target as HTMLInputElement;
       setFormData((prevState) => ({
         ...prevState,
         [name]: value,
@@ -77,7 +115,26 @@ export default function CrearParteEmergencia() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+
+    const requiredFields = ['horaInicio', 'horaFin', 'preInforme', 'direccionEmergencia', 'idOficial', 'idClaveEmergencia'];
+    let hasError = false;
+
+    requiredFields.forEach(field => {
+      const element = document.getElementById(field);
+      if (!formData[field as keyof FormData]) {
+        element?.classList.add('border-red-500');
+        hasError = true;
+      } else {
+        element?.classList.remove('border-red-500');
+      }
+    });
+
+    if (hasError) {
+      toast.error("Por favor, complete todos los campos requeridos.");
+      return;
+    }
+
+    console.log("Datos del formulario:", formData);
     formData.fechaEmergencia = formatearFecha(date.toISOString());
 
     try {
@@ -91,26 +148,19 @@ export default function CrearParteEmergencia() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Parte de emergencia creado",
-          description: "El parte de emergencia se ha creado exitosamente.",
-        });
-        router.push("/parte-emergencia");
+        const data = await response.json();
+        console.log("Respuesta del servidor:", data);
+        toast.success("Parte de emergencia guardado");
+
+        // Opcional: Limpiar el formulario después de guardar
+      
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error || "Hubo un error al crear el parte de emergencia.",
-          variant: "destructive",
-        });
+        throw new Error(errorData.error || "Hubo un error al crear el parte de emergencia.");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Hubo un error al conectar con el servidor.",
-        variant: "destructive",
-      });
+      console.error("Error al guardar:", error);
+      toast.error("Error al guardar el parte de emergencia.");
     }
   };
 
@@ -132,16 +182,9 @@ export default function CrearParteEmergencia() {
         setParteAsistenciaOptions(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener el parte de asistencia.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener el parte de asistencia:", errorData.error);
       }
     };
-
 
     const obtenerMaterialesPeligrosos = async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materialP/obtener`,
@@ -160,13 +203,7 @@ export default function CrearParteEmergencia() {
         setMaterialesPeligrosos(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener los materiales peligrosos.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener los materiales peligrosos:", errorData.error);
       }
     };
 
@@ -187,13 +224,7 @@ export default function CrearParteEmergencia() {
         setVoluntarios(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener los voluntarios.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener los voluntarios:", errorData.error);
       }
     };
 
@@ -214,16 +245,10 @@ export default function CrearParteEmergencia() {
         setClaveEmergencia(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener claveEmergencia.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener claveEmergencia:", errorData.error);
       }
     };
-    
+
     obtenerClaveEmergencia();
     obtenerVoluntarios();
     obtenerMaterialesPeligrosos();
@@ -239,7 +264,6 @@ export default function CrearParteEmergencia() {
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
-            
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="horaInicio">Hora de Inicio</Label>
                 <Input
@@ -249,6 +273,7 @@ export default function CrearParteEmergencia() {
                   value={formData.horaInicio}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -260,10 +285,11 @@ export default function CrearParteEmergencia() {
                   value={formData.horaFin}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="horaFin">Fecha</Label>
+                <Label htmlFor="fechaEmergencia">Fecha</Label>
                 <DatePicker
                   date={date}
                   setDate={(date) => setDate(date || new Date())}
@@ -277,6 +303,7 @@ export default function CrearParteEmergencia() {
                   value={formData.preInforme}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -290,13 +317,39 @@ export default function CrearParteEmergencia() {
                 <Label htmlFor="llamarEmpresaQuimica">Llamar Empresa Química</Label>
               </div>
               <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="idMaterialP">Material Peligroso</Label>
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "idMaterialP")
+                  }
+                  value={formData.idMaterialP === null ? "null" : formData.idMaterialP}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccione un Material Peligroso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">Ninguno</SelectItem>
+                    {materialesPeligrosos.map((material) => (
+                      <SelectItem
+                        key={material.idMaterialP}
+                        value={material.idMaterialP.toString()}
+                      >
+                        {material.idMaterialP} - {material.clasificacion}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="descripcionMaterialP">Descripción material peligroso</Label>
                 <Textarea
                   id="descripcionMaterialP"
                   name="descripcionMaterialP"
                   value={formData.descripcionMaterialP}
                   onChange={handleChange}
-                  required
+                  disabled={formData.isDescripcionDisabled}
+                  required={!formData.isDescripcionDisabled}
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -307,19 +360,18 @@ export default function CrearParteEmergencia() {
                   value={formData.direccionEmergencia}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
-
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="idOficial">Oficial</Label>
                 <Select
                   onValueChange={(value) =>
                     handleChange(value, "idOficial")
                   }
-                  value={formData.idVoluntario}
+                  value={formData.idOficial}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="idOficial" className="w-full">
                     <SelectValue placeholder="Seleccione un Oficial" />
                   </SelectTrigger>
                   <SelectContent>
@@ -334,7 +386,6 @@ export default function CrearParteEmergencia() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="idClaveEmergencia">Clave Emergencia</Label>
                 <Select
@@ -343,7 +394,7 @@ export default function CrearParteEmergencia() {
                   }
                   value={formData.idClaveEmergencia}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="idClaveEmergencia" className="w-full">
                     <SelectValue placeholder="Seleccione Clave Emergencia" />
                   </SelectTrigger>
                   <SelectContent>
@@ -358,19 +409,19 @@ export default function CrearParteEmergencia() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="folioPAsistencia">Folio P. Asistencia</Label>
                 <Select
                   onValueChange={(value) =>
                     handleChange(value, "folioPAsistencia")
                   }
-                  value={formData.folioPAsistencia}
+                  value={formData.folioPAsistencia === null ? "null" : formData.folioPAsistencia}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccione un folio" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="null">Ninguno</SelectItem>
                     {parteAsistenciaOptions.map((option) => (
                       <SelectItem
                         key={option.folioPAsistencia}
@@ -379,19 +430,25 @@ export default function CrearParteEmergencia() {
                         {option.folioPAsistencia} - {option.observaciones}
                       </SelectItem>
                     ))}
-                  </SelectContent>  
+                  </SelectContent>
                 </Select>
               </div>
             </div>
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button variant="outline" onClick={() => window.history.back()}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>Crear Parte de Emergencia</Button>
+          <Button type="submit" onClick={handleSubmit}>Guardar Parte de Emergencia</Button>
         </CardFooter>
       </Card>
+      <Toaster />
+      <style jsx>{`
+        .border-red-500 {
+          border-color: #ef4444 !important;
+        }
+      `}</style>
     </div>
   );
 }
