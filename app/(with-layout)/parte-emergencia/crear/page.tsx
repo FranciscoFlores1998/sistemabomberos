@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
 import { DatePicker } from "@/components/ui/datepicker";
 import { formatearFecha } from "@/lib/formatearFecha";
 import {
@@ -23,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
+import toast, { Toaster } from "react-hot-toast";
 
 interface MaterialPeligroso {
   idMaterialP: number;
@@ -80,7 +79,6 @@ export default function CrearParteEmergencia() {
     idMaterialP: null,
     isDescripcionDisabled: true,
   });
-  const { toast } = useToast();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string | boolean,
@@ -117,23 +115,26 @@ export default function CrearParteEmergencia() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Formulario enviado"); // Para verificar que la función se está ejecutando
 
-    // Validación de campos requeridos
     const requiredFields = ['horaInicio', 'horaFin', 'preInforme', 'direccionEmergencia', 'idOficial', 'idClaveEmergencia'];
-    const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
+    let hasError = false;
 
-    if (missingFields.length > 0) {
-      console.log("Campos faltantes:", missingFields); // Para depuración
-      toast({
-        title: "Campos faltantes",
-        description: `Por favor, complete los siguientes campos: ${missingFields.join(', ')}`,
-        variant: "destructive",
-      });
+    requiredFields.forEach(field => {
+      const element = document.getElementById(field);
+      if (!formData[field as keyof FormData]) {
+        element?.classList.add('border-red-500');
+        hasError = true;
+      } else {
+        element?.classList.remove('border-red-500');
+      }
+    });
+
+    if (hasError) {
+      toast.error("Por favor, complete todos los campos requeridos.");
       return;
     }
 
-    console.log("Datos del formulario:", formData); // Para verificar los datos antes de enviar
+    console.log("Datos del formulario:", formData);
     formData.fechaEmergencia = formatearFecha(date.toISOString());
 
     try {
@@ -148,39 +149,18 @@ export default function CrearParteEmergencia() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Respuesta del servidor:", data); // Para verificar la respuesta del servidor
-
-        toast({
-          title: "Parte de emergencia guardado",
-          description: "El parte de emergencia se ha guardado exitosamente.",
-        });
+        console.log("Respuesta del servidor:", data);
+        toast.success("Parte de emergencia guardado");
 
         // Opcional: Limpiar el formulario después de guardar
-        setFormData({
-          horaInicio: "",
-          horaFin: "",
-          fechaEmergencia: "",
-          preInforme: "",
-          llamarEmpresaQuimica: false,
-          descripcionMaterialP: "",
-          direccionEmergencia: "",
-          idOficial: "",
-          idClaveEmergencia: "",
-          folioPAsistencia: null,
-          idMaterialP: null,
-          isDescripcionDisabled: true,
-        });
+      
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || "Hubo un error al crear el parte de emergencia.");
       }
     } catch (error) {
-      console.error("Error al guardar:", error); // Para depuración
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Hubo un error al conectar con el servidor.",
-        variant: "destructive",
-      });
+      console.error("Error al guardar:", error);
+      toast.error("Error al guardar el parte de emergencia.");
     }
   };
 
@@ -202,13 +182,7 @@ export default function CrearParteEmergencia() {
         setParteAsistenciaOptions(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener el parte de asistencia.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener el parte de asistencia:", errorData.error);
       }
     };
 
@@ -229,13 +203,7 @@ export default function CrearParteEmergencia() {
         setMaterialesPeligrosos(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener los materiales peligrosos.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener los materiales peligrosos:", errorData.error);
       }
     };
 
@@ -256,13 +224,7 @@ export default function CrearParteEmergencia() {
         setVoluntarios(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener los voluntarios.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener los voluntarios:", errorData.error);
       }
     };
 
@@ -283,13 +245,7 @@ export default function CrearParteEmergencia() {
         setClaveEmergencia(data);
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error ||
-            "Hubo un error al obtener claveEmergencia.",
-          variant: "destructive",
-        });
+        console.error("Error al obtener claveEmergencia:", errorData.error);
       }
     };
 
@@ -317,6 +273,7 @@ export default function CrearParteEmergencia() {
                   value={formData.horaInicio}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -328,6 +285,7 @@ export default function CrearParteEmergencia() {
                   value={formData.horaFin}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -345,6 +303,7 @@ export default function CrearParteEmergencia() {
                   value={formData.preInforme}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -390,6 +349,7 @@ export default function CrearParteEmergencia() {
                   onChange={handleChange}
                   disabled={formData.isDescripcionDisabled}
                   required={!formData.isDescripcionDisabled}
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -400,6 +360,7 @@ export default function CrearParteEmergencia() {
                   value={formData.direccionEmergencia}
                   onChange={handleChange}
                   required
+                  className="border-2 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -410,7 +371,7 @@ export default function CrearParteEmergencia() {
                   }
                   value={formData.idOficial}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="idOficial" className="w-full">
                     <SelectValue placeholder="Seleccione un Oficial" />
                   </SelectTrigger>
                   <SelectContent>
@@ -433,7 +394,7 @@ export default function CrearParteEmergencia() {
                   }
                   value={formData.idClaveEmergencia}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="idClaveEmergencia" className="w-full">
                     <SelectValue placeholder="Seleccione Clave Emergencia" />
                   </SelectTrigger>
                   <SelectContent>
@@ -482,6 +443,12 @@ export default function CrearParteEmergencia() {
           <Button type="submit" onClick={handleSubmit}>Guardar Parte de Emergencia</Button>
         </CardFooter>
       </Card>
+      <Toaster />
+      <style jsx>{`
+        .border-red-500 {
+          border-color: #ef4444 !important;
+        }
+      `}</style>
     </div>
   );
 }
