@@ -12,7 +12,11 @@ interface ParteAsistencia {
   idTipoLlamado: number;
 }
 
-export function AsistenciaReport() {
+interface AsistenciaReportProps {
+  onDataLoad: (total: number) => void;
+}
+
+export function AsistenciaReport({ onDataLoad }: AsistenciaReportProps) {
   const [partesAsistencia, setPartesAsistencia] = useState<ParteAsistencia[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,7 +34,12 @@ export function AsistenciaReport() {
           throw new Error('Failed to fetch attendance reports')
         }
         const data = await response.json()
-        setPartesAsistencia(Array.isArray(data) ? data : [])
+        const parsedData = Array.isArray(data) ? data : []
+        setPartesAsistencia(parsedData)
+        
+        // Calculate and send total to parent
+        const totalAsistencias = parsedData.reduce((sum, parte) => sum + (parte.totalAsistencia || 0), 0)
+        onDataLoad(totalAsistencias)
       } catch (err) {
         setError('Error fetching attendance reports data')
         console.error(err)
@@ -40,8 +49,9 @@ export function AsistenciaReport() {
     }
 
     fetchPartesAsistencia()
-  }, [])
+  }, [onDataLoad])
 
+  // Rest of the component remains the same
   if (loading) return <p>Cargando datos de asistencia...</p>
   if (error) return <p className="text-red-500">{error}</p>
 

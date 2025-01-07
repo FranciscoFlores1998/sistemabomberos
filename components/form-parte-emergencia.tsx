@@ -251,9 +251,7 @@ export default function FormParteEmergencia({
       idClaveEmergencia: formData.idClaveEmergencia,
       folioPAsistencia: formData.folioPAsistencia || null,
     };
-    console.log("Datos del formulario:", formData);
 
-    console.log("Datos del formulario con fecha:", formData);
     try {
       const response = await fetch("/api/parte-emergencia/crear", {
         method: "POST",
@@ -263,11 +261,10 @@ export default function FormParteEmergencia({
         },
         body: JSON.stringify(envioParteEmergencia),
       });
-      console.log("Respuesta del servidor:", response);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Respuesta del servidor:", data);
+
         toast.success("Parte de emergencia guardado");
         setIdParteEmergencia(data.folioPEmergencia);
         setParteEmergenciaCompleto(true);
@@ -285,16 +282,18 @@ export default function FormParteEmergencia({
 
   const fetchMoviles = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/movil/obtener`, {
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/movil/obtener`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (response.ok) {
         const data = await response.json();
-        setMoviles(data);
-        setMovilesDisponibles(data);
+        return data;
       } else {
         throw new Error("Failed to fetch moviles");
       }
@@ -306,24 +305,20 @@ export default function FormParteEmergencia({
 
   const fetchMovilesSeleccionados = async () => {
     if (!params?.folio) return;
-    
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia-movil/obtener-moviles-emergencia/${params.folio}`, {
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia-movil/moviles-asistencia/${params.folio}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (response.ok) {
         const data = await response.json();
-        console.log("Moviles seleccionados:", data);
-        setAddedMoviles(data);
-        // Actualizar móviles disponibles
-        setMovilesDisponibles(prevMoviles => 
-          prevMoviles.filter(movil => 
-            !data.some(addedMovil => addedMovil.idMovil === movil.idMovil)
-          )
-        );
+        return data;
       } else {
         throw new Error("Failed to fetch moviles seleccionados");
       }
@@ -412,7 +407,11 @@ export default function FormParteEmergencia({
     if (!voluntarioToAdd) return;
 
     // Verificar si el voluntario ya está agregado
-    if (addedVoluntarios.some((v) => v.idVoluntario === voluntarioToAdd.idVoluntario)) {
+    if (
+      addedVoluntarios.some(
+        (v) => v.idVoluntario === voluntarioToAdd.idVoluntario
+      )
+    ) {
       toast.error("Este voluntario ya está agregado al parte de emergencia");
       return;
     }
@@ -451,9 +450,11 @@ export default function FormParteEmergencia({
     }
   };
 
-  const handleVictimaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleVictimaChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setVictima(prev => ({
+    setVictima((prev) => ({
       ...prev,
       [name]: name === "edadVictima" ? parseInt(value) || 0 : value,
     }));
@@ -500,9 +501,11 @@ export default function FormParteEmergencia({
     }
   };
 
-  const handleInstitucionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInstitucionChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setInstitucion(prev => ({
+    setInstitucion((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -549,9 +552,13 @@ export default function FormParteEmergencia({
     }
   };
 
-  const handleInmuebleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInmuebleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setInmueble(prev => ({
+    setInmueble((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -597,9 +604,11 @@ export default function FormParteEmergencia({
     }
   };
 
-  const handleVehiculoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleVehiculoChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setVehiculo(prev => ({
+    setVehiculo((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -648,7 +657,6 @@ export default function FormParteEmergencia({
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log(params);
       if (params?.folio) {
         setParteEmergenciaCompleto(true);
       }
@@ -717,11 +725,45 @@ export default function FormParteEmergencia({
             clavesEmergenciaRes.json(),
             materialesPeligrosos.json(),
           ]);
+          
+          const voluntariosResponse = async () => {
+            if (!params?.folio) return [];
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia-voluntario/voluntarios-presentes/${params?.folio}`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  "ngrok-skip-browser-warning": "true",
+                },
+              }
+            );
+            if (response.ok) {
+              const data = await response.json();
+
+              return data;
+            } else {
+              throw new Error("Failed to fetch voluntarios seleccionados");
+            }
+          };
+          const voluntariosSeleccionados = await voluntariosResponse();
+          // Filtrar los voluntarios disponibles que tienen el mismo idVoluntario que los seleccionados no tienen que no se deben de repetir con los volutanrios disponibles
+          const voluntariosDisponibles = voluntariosData.filter(
+            (voluntario) =>
+              !voluntariosSeleccionados.some(
+                (seleccionado) =>
+                  seleccionado.idVoluntario === voluntario.idVoluntario
+              )
+          );
+
+          setAddedVoluntarios(voluntariosSeleccionados);
+         
+          
+          
           setFormData(parteEmergenciaData as any);
-          console.log("folio parte asistencia", parteEmergenciaData);
+
           setParteAsistenciaOptions(parteAsistenciaData);
           setVoluntarios(voluntariosData);
-          setVoluntariosDisponibles(voluntariosData);
+          setVoluntariosDisponibles(voluntariosDisponibles);
           setClaveEmergencia(clavesEmergenciaData);
           setDate(
             parteEmergenciaData.fechaEmergencia
@@ -740,19 +782,38 @@ export default function FormParteEmergencia({
 
     fetchData();
   }, [params?.folio]);
+  const movilesFilter = async () => {
+    const moviles = await fetchMoviles(); // Obtiene todos los móviles
+    const movilesSeleccionados = await fetchMovilesSeleccionados(); // Obtiene los móviles seleccionados
+    // Moviles disponibles se deberia quitar del arreglo moviles
 
+    
+
+    if (!movilesSeleccionados){
+      setMovilesDisponibles(moviles);
+      setAddedMoviles([]);
+
+    }else{
+      const filteredMoviles = moviles.filter(
+        (movil) =>
+          !movilesSeleccionados.some(
+            (disponible) => disponible.idMovil === movil.idMovil
+          )
+      );
+      setMovilesDisponibles(filteredMoviles);
+      setAddedMoviles(movilesSeleccionados);
+    }
+    
+     
+
+   
+  };
   useEffect(() => {
     if (parteEmergenciaCompleto) {
-      fetchMoviles().then(() => {
-        if (params?.folio) {
-          fetchMovilesSeleccionados();
-        }
-      });
       fetchVoluntarios();
+      movilesFilter();
     }
   }, [parteEmergenciaCompleto, params?.folio]);
-
-  console.log("Moviles disponibles:", addedMoviles);
 
   return (
     <div className="container mx-auto py-10">
@@ -895,6 +956,7 @@ export default function FormParteEmergencia({
                 <Label htmlFor="idClaveEmergencia">Clave Emergencia</Label>
                 <Select
                   onValueChange={(value) =>
+                    
                     handleChange(value, "idClaveEmergencia")
                   }
                   value={formData.idClaveEmergencia}
@@ -1024,9 +1086,7 @@ export default function FormParteEmergencia({
                     </div>
                   </div>
                   <div className="flex flex-col space-y-4 mt-6">
-                    <h3 className="text-lg font-semibold">
-                      Registrar Víctima
-                    </h3>
+                    <h3 className="text-lg font-semibold">Registrar Víctima</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="rutVictima">RUT Víctima</Label>
@@ -1084,7 +1144,9 @@ export default function FormParteEmergencia({
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col space-y-1.5">
-                        <Label htmlFor="nombreInstitucion">Nombre Institución</Label>
+                        <Label htmlFor="nombreInstitucion">
+                          Nombre Institución
+                        </Label>
                         <Input
                           id="nombreInstitucion"
                           name="nombreInstitucion"
@@ -1095,7 +1157,9 @@ export default function FormParteEmergencia({
                         />
                       </div>
                       <div className="flex flex-col space-y-1.5">
-                        <Label htmlFor="tipoInstitucion">Tipo Institución</Label>
+                        <Label htmlFor="tipoInstitucion">
+                          Tipo Institución
+                        </Label>
                         <Input
                           id="tipoInstitucion"
                           name="tipoInstitucion"
@@ -1107,7 +1171,9 @@ export default function FormParteEmergencia({
                       </div>
                     </div>
                     <div className="flex flex-col space-y-1.5">
-                      <Label htmlFor="nombrePersonaCargo">Nombre Persona a Cargo</Label>
+                      <Label htmlFor="nombrePersonaCargo">
+                        Nombre Persona a Cargo
+                      </Label>
                       <Input
                         id="nombrePersonaCargo"
                         name="nombrePersonaCargo"
@@ -1152,16 +1218,24 @@ export default function FormParteEmergencia({
                       <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="tipoInmueble">Tipo de Inmueble</Label>
                         <Select
-                          onValueChange={(value) => handleInmuebleChange({ target: { name: "tipoInmueble", value } } as React.ChangeEvent<HTMLSelectElement>)}
+                          onValueChange={(value) =>
+                            handleInmuebleChange({
+                              target: { name: "tipoInmueble", value },
+                            } as React.ChangeEvent<HTMLSelectElement>)
+                          }
                           value={inmueble.tipoInmueble}
                         >
                           <SelectTrigger id="tipoInmueble" className="w-full">
                             <SelectValue placeholder="Seleccione el tipo" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Residencial">Residencial</SelectItem>
+                            <SelectItem value="Residencial">
+                              Residencial
+                            </SelectItem>
                             <SelectItem value="Comercial">Comercial</SelectItem>
-                            <SelectItem value="Industrial">Industrial</SelectItem>
+                            <SelectItem value="Industrial">
+                              Industrial
+                            </SelectItem>
                             <SelectItem value="Terreno">Terreno</SelectItem>
                             <SelectItem value="Otro">Otro</SelectItem>
                           </SelectContent>
@@ -1169,7 +1243,9 @@ export default function FormParteEmergencia({
                       </div>
                     </div>
                     <div className="flex flex-col space-y-1.5">
-                      <Label htmlFor="estadoInmueble">Estado del Inmueble</Label>
+                      <Label htmlFor="estadoInmueble">
+                        Estado del Inmueble
+                      </Label>
                       <Textarea
                         id="estadoInmueble"
                         name="estadoInmueble"
@@ -1227,7 +1303,11 @@ export default function FormParteEmergencia({
                       <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="tipoVehiculo">Tipo de Vehículo</Label>
                         <Select
-                          onValueChange={(value) => handleVehiculoChange({ target: { name: "tipoVehiculo", value } } as React.ChangeEvent<HTMLSelectElement>)}
+                          onValueChange={(value) =>
+                            handleVehiculoChange({
+                              target: { name: "tipoVehiculo", value },
+                            } as React.ChangeEvent<HTMLSelectElement>)
+                          }
                           value={vehiculo.tipoVehiculo}
                         >
                           <SelectTrigger id="tipoVehiculo" className="w-full">
@@ -1237,7 +1317,9 @@ export default function FormParteEmergencia({
                             <SelectItem value="Automóvil">Automóvil</SelectItem>
                             <SelectItem value="Camioneta">Camioneta</SelectItem>
                             <SelectItem value="Camión">Camión</SelectItem>
-                            <SelectItem value="Motocicleta">Motocicleta</SelectItem>
+                            <SelectItem value="Motocicleta">
+                              Motocicleta
+                            </SelectItem>
                             <SelectItem value="Otro">Otro</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1270,4 +1352,3 @@ export default function FormParteEmergencia({
     </div>
   );
 }
-
