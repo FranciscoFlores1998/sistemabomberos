@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     const parteEmergencia = await request.json()
 
     // Aquí deberías hacer la llamada a tu API backend
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/crear`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/guardar`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
