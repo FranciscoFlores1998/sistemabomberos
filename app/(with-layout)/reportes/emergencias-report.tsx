@@ -19,7 +19,11 @@ interface ClaveEmergencia {
   nombreClaveEmergencia: string;
 }
 
-export function EmergenciasReport() {
+interface EmergenciasReportProps {
+  onDataLoad: (total: number) => void;
+}
+
+export function EmergenciasReport({ onDataLoad }: EmergenciasReportProps) {
   const [partesEmergencia, setPartesEmergencia] = useState<ParteEmergencia[]>([])
   const [clavesEmergencia, setClavesEmergencia] = useState<ClaveEmergencia[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,8 +54,14 @@ export function EmergenciasReport() {
         const partesData = await partesResponse.json()
         const clavesData = await clavesResponse.json()
 
-        setPartesEmergencia(Array.isArray(partesData) ? partesData : [])
-        setClavesEmergencia(Array.isArray(clavesData) ? clavesData : [])
+        const parsedPartesData = Array.isArray(partesData) ? partesData : []
+        const parsedClavesData = Array.isArray(clavesData) ? clavesData : []
+
+        setPartesEmergencia(parsedPartesData)
+        setClavesEmergencia(parsedClavesData)
+        
+        // Send total to parent
+        onDataLoad(parsedPartesData.length)
       } catch (err) {
         setError('Error fetching data')
         console.error(err)
@@ -61,7 +71,7 @@ export function EmergenciasReport() {
     }
 
     fetchData()
-  }, [])
+  }, [onDataLoad])
 
   if (loading) return <p>Cargando datos de emergencias...</p>
   if (error) return <p className="text-red-500">{error}</p>
@@ -128,6 +138,7 @@ export function EmergenciasReport() {
             <TableHead>Hora Inicio</TableHead>
             <TableHead>Hora Fin</TableHead>
             <TableHead>Dirección</TableHead>
+            <TableHead>Clave</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -138,6 +149,9 @@ export function EmergenciasReport() {
               <TableCell>{parte.horaInicio}</TableCell>
               <TableCell>{parte.horaFin}</TableCell>
               <TableCell>{parte.direccionEmergencia}</TableCell>
+              <TableCell>
+                {clavesEmergencia.find(clave => clave.idClaveEmergencia === parte.idClaveEmergencia)?.nombreClaveEmergencia || 'Desconocido'}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

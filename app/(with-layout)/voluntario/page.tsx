@@ -10,6 +10,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import cookie from "js-cookie";
 
 interface VoluntarioData {
   idVoluntario: number;
@@ -33,13 +34,15 @@ export default function Voluntario() {
   const [voluntario, setVoluntario] = useState<VoluntarioData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const voluntarioSesion = cookie.get("login");
+  console.log(voluntarioSesion);
+  const parsedVoluntario = voluntarioSesion ? JSON.parse(voluntarioSesion) : null;
   useEffect(() => {
     const fetchLoggedInVoluntario = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/buscar/1`,
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/buscar-por-usuario/${parsedVoluntario.usuario.idUsuario}`,
           {
             method: "GET",
             headers: {
