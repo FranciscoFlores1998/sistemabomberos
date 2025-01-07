@@ -748,9 +748,9 @@ export default function FormParteEmergencia({
           const voluntariosSeleccionados = await voluntariosResponse();
           // Filtrar los voluntarios disponibles que tienen el mismo idVoluntario que los seleccionados no tienen que no se deben de repetir con los volutanrios disponibles
           const voluntariosDisponibles = voluntariosData.filter(
-            (voluntario) =>
+            (voluntario:any) =>
               !voluntariosSeleccionados.some(
-                (seleccionado) =>
+                (seleccionado:any) =>
                   seleccionado.idVoluntario === voluntario.idVoluntario
               )
           );
@@ -765,11 +765,13 @@ export default function FormParteEmergencia({
           setVoluntarios(voluntariosData);
           setVoluntariosDisponibles(voluntariosDisponibles);
           setClaveEmergencia(clavesEmergenciaData);
+          //@ts-ignore
           setDate(
-            parteEmergenciaData.fechaEmergencia
+            parteEmergenciaData.fechaEmergencia as any
               ? new Date(parteEmergenciaData.fechaEmergencia)
               : new Date()
           );
+          // @ts-ignore
           setMaterialesPeligrosos(materialesPeligrososData);
         } else {
           throw new Error("Failed to fetch data");
