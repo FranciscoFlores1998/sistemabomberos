@@ -25,40 +25,60 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 import { UserPlus } from 'lucide-react';
+import toast, { Toaster } from "react-hot-toast";
 
 interface Usuario {
   idUsuario: number;
   nombreUsuario: string;
 }
 
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+  idUsuario: number | null;
+}
+
 export default function ListaUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    fetchUsuarios();
+    fetchUsuariosYVoluntarios();
   }, []);
 
-  const fetchUsuarios = async () => {
+  const fetchUsuariosYVoluntarios = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/obtener`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch users data");
+      const [usuariosResponse, voluntariosResponse] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/obtener`, {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        })
+      ]);
+
+      if (!usuariosResponse.ok || !voluntariosResponse.ok) {
+        throw new Error("Failed to fetch data");
       }
-      const data = await response.json();
-      setUsuarios(data);
+
+      const usuariosData = await usuariosResponse.json();
+      const voluntariosData = await voluntariosResponse.json();
+
+      setUsuarios(usuariosData);
+      setVoluntarios(voluntariosData);
     } catch (err) {
-      setError("Error al obtener los datos de usuarios. Por favor, intente de nuevo.");
+      setError("Error al obtener los datos. Por favor, intente de nuevo.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -76,25 +96,52 @@ export default function ListaUsuarios() {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/eliminar/${id}`, {
+      // Find the volunteer associated with this user
+      const voluntarioAsociado = voluntarios.find(v => v.idUsuario === id);
+
+      if (!voluntarioAsociado) {
+        throw new Error('No se encontró un voluntario asociado a este usuario');
+      }
+      // Then, update the associated volunteer
+      const updateVolunteerResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/actualizar/${voluntarioAsociado.idVoluntario}`, {
+        method: 'PUT',
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify({ ...voluntarioAsociado, idUsuario: null }),
+      });
+      if (!updateVolunteerResponse.ok) {
+        throw new Error('Failed to update volunteer');
+      }
+
+      setUsuarios(usuarios.filter(usuario => usuario.idUsuario !== id));
+      setVoluntarios(voluntarios.map(v => 
+        v.idVoluntario === voluntarioAsociado.idVoluntario ? { ...v, idUsuario: null } : v
+      ));
+      toast.success("Usuario eliminado y voluntario actualizado exitosamente");
+      // First, delete the user
+      const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/eliminar/${id}`, {
         method: 'DELETE',
         headers: {
           "Content-Type": "application/json",
           "ngrok-skip-browser-warning": "true",
         },
       });
-      if (!response.ok) {
+      if (!deleteResponse.ok) {
         throw new Error('Failed to delete user');
       }
-      setUsuarios(usuarios.filter(usuario => usuario.idUsuario !== id));
+
+
     } catch (error) {
-      console.error('Error deleting user:', error);
-      setError('Error al eliminar el usuario. Por favor, intente de nuevo.');
+      console.error('Error deleting user or updating volunteer:', error);
+      toast.error('Error al eliminar el usuario o actualizar el voluntario. Por favor, intente de nuevo.');
     }
   };
 
   return (
     <div className="container mx-auto py-10">
+      <Toaster position="top-right" />
       <Card className="w-full max-w-4xl mx-auto mb-6">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Lista de Usuarios</CardTitle>
