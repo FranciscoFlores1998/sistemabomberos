@@ -23,21 +23,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import toast, { Toaster } from "react-hot-toast";
+import { AgregarMovilesVoluntarios } from "@/components/AgregarMovilesVoluntarios";
 
 interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
 }
+
 interface Voluntario {
   idVoluntario: number;
   nombreVol: string;
+  claveRadial: string;
 }
+
+interface FormData {
+  folioPAsistencia: number | null;
+  aCargoDelCuerpo: string;
+  aCargoDeLaCompania: string;
+  fechaAsistencia: string;
+  horaInicio: string;
+  horaFin: string;
+  direccionAsistencia: string;
+  totalAsistencia: string;
+  observaciones: string;
+  idTipoLlamado: string;
+}
+
 export default function CrearParteAsistencia() {
   const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([]);
   const [oficial, setOficial] = useState<Voluntario[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
+    folioPAsistencia: null,
     aCargoDelCuerpo: "",
     aCargoDeLaCompania: "",
     fechaAsistencia: "",
@@ -49,6 +67,8 @@ export default function CrearParteAsistencia() {
     idTipoLlamado: "",
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+  const [parteCreado, setParteCreado] = useState(false);
+  const [folioPAsistencia, setFolioPAsistencia] = useState<number | null>(null);
 
   const handleChange = (
     e:
@@ -76,7 +96,6 @@ export default function CrearParteAsistencia() {
         [name]: value,
       }));
     }
-    // Clear the error for this field when it's changed
     setFieldErrors((prevErrors) => ({
       ...prevErrors,
       [name as string]: false,
@@ -99,8 +118,9 @@ export default function CrearParteAsistencia() {
 
     requiredFields.forEach((field) => {
       const element = document.getElementById(field);
-      if (!formData[field as keyof typeof formData]) {
+      if (!formData[field as keyof FormData]) {
         element?.classList.add("border-red-500");
+        errors[field] = true;
         hasError = true;
       } else {
         element?.classList.remove("border-red-500");
@@ -114,8 +134,11 @@ export default function CrearParteAsistencia() {
       return;
     }
 
-    console.log(formData);
-    formData.fechaAsistencia = formatearFecha(date.toISOString());
+    const submitData = {
+      ...formData,
+      fechaAsistencia: formatearFecha(date.toISOString()),
+    };
+
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/crear`,
@@ -125,13 +148,15 @@ export default function CrearParteAsistencia() {
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(submitData),
         }
       );
 
       if (response.ok) {
+        const data = await response.json();
         toast.success("El parte de asistencia se ha creado exitosamente.");
-        router.push("/parte-asistencia");
+        setParteCreado(true);
+        setFolioPAsistencia(data.folioPAsistencia);
       } else {
         const errorData = await response.json();
         toast.error(
@@ -139,6 +164,7 @@ export default function CrearParteAsistencia() {
         );
       }
     } catch (error) {
+      console.error("Error al guardar:", error);
       toast.error("Hubo un error al conectar con el servidor.");
     }
   };
@@ -146,50 +172,38 @@ export default function CrearParteAsistencia() {
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
-        const responseTipoLlamado = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
-          {
-            method: "GET",
+        const [responseTipoLlamado, responseVoluntarios] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
             headers: {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
             },
-          }
-        );
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          })
+        ]);
 
-        if (responseTipoLlamado.ok) {
-          const dataTipoLlamado = await responseTipoLlamado.json();
+        if (responseTipoLlamado.ok && responseVoluntarios.ok) {
+          const [dataTipoLlamado, dataVoluntarios] = await Promise.all([
+            responseTipoLlamado.json(),
+            responseVoluntarios.json()
+          ]);
+
           setTipoCitacion(dataTipoLlamado);
+          setOficial(dataVoluntarios);
         } else {
-          toast.error("Hubo un error al obtener el tipo de citación.");
+          toast.error("Hubo un error al obtener los datos.");
         }
       } catch (error) {
         console.error("Error al obtener datos:", error);
         toast.error("Hubo un error al conectar con el servidor.");
       }
     };
-    const obtenerVoluntarios = async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }
-      );
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        setOficial(data);
-      } else {
-        const errorData = await response.json();
-        console.error("Error al obtener los voluntarios:", errorData.error);
-      }
-    };
-    obtenerVoluntarios();
     obtenerDatos();
   }, []);
 
@@ -298,8 +312,7 @@ export default function CrearParteAsistencia() {
                     <SelectValue placeholder="Seleccione un Oficial" />
                   </SelectTrigger>
                   <SelectContent>
-                    
-                  <SelectItem value="null">Ninguno</SelectItem>
+                    <SelectItem value="null">Ninguno</SelectItem>
                     {oficial.map((option) => (
                       <SelectItem
                         key={option.idVoluntario}
@@ -311,10 +324,9 @@ export default function CrearParteAsistencia() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDeLaCompania">
-                  Oficial a cargo de la compañia
+                  Oficial a cargo de la compañía
                 </Label>
                 <Select
                   onValueChange={(value) =>
@@ -326,8 +338,7 @@ export default function CrearParteAsistencia() {
                     <SelectValue placeholder="Seleccione un Oficial" />
                   </SelectTrigger>
                   <SelectContent>
-                    
-                  <SelectItem value="null">Ninguno</SelectItem>
+                    <SelectItem value="null">Ninguno</SelectItem>
                     {oficial.map((option) => (
                       <SelectItem
                         key={option.idVoluntario}
@@ -359,10 +370,16 @@ export default function CrearParteAsistencia() {
           <Button variant="outline" onClick={() => router.back()}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>Crear Parte de Asistencia</Button>
+          {!parteCreado && (
+            <Button onClick={handleSubmit}>Crear Parte de Asistencia</Button>
+          )}
         </CardFooter>
       </Card>
+      {parteCreado && folioPAsistencia && (
+        <AgregarMovilesVoluntarios folioPAsistencia={folioPAsistencia} />
+      )}
       <Toaster />
     </div>
   );
 }
+
