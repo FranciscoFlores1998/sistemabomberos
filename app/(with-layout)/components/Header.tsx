@@ -31,7 +31,7 @@ export default function Header() {
             <Link href="/voluntario" className="hover:underline">Mis Datos</Link>
           </li>
           <li>
-            <Link href="/perfil" className="hover:underline">Perfil</Link>
+            <Link href="/usuario" className="hover:underline">Control de usuarios</Link>
           </li>
           <li>
             <Link href="/" className="hover:underline" onClick={()=>Cookies.remove("login")}>Cerrar sesión</Link>

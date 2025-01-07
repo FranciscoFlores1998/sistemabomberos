@@ -1,6 +1,16 @@
 "use client";
 
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, UserPlus } from 'lucide-react';
+import { Search, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -49,7 +59,9 @@ export default function Busqueda() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [allVoluntarios, setAllVoluntarios] = useState<VoluntarioData[]>([]);
-  const [filteredVoluntarios, setFilteredVoluntarios] = useState<VoluntarioData[]>([]);
+  const [filteredVoluntarios, setFilteredVoluntarios] = useState<
+    VoluntarioData[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cargoVol, setCargoVol] = useState<CargoData[]>([]);
@@ -63,14 +75,16 @@ export default function Busqueda() {
 
   const fetchCargos = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cargo/obtener`,
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/cargo/obtener`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
           },
-        });
+        }
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch cargos data");
       }
@@ -83,7 +97,8 @@ export default function Busqueda() {
 
   const fetchCompanias = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compania/obtener`,
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/compania/obtener`,
         {
           method: "GET",
           headers: {
@@ -101,7 +116,6 @@ export default function Busqueda() {
       console.error("Error fetching compañias:", error);
     }
   };
-
 
   const fetchAllVoluntarios = async () => {
     setLoading(true);
@@ -136,39 +150,45 @@ export default function Busqueda() {
     const filtered = allVoluntarios.filter(
       (voluntario) =>
         voluntario.nombreVol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        voluntario.rutVoluntario.toLowerCase().includes(searchTerm.toLowerCase())
+        voluntario.rutVoluntario
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
     );
     setFilteredVoluntarios(filtered);
   };
 
-  
   const handleCreateVolunteer = () => {
     router.push("/voluntario/crear");
   };
 
   const handleDeleteVolunteer = async (id: number) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/eliminar/${id}`, {
-        method: 'DELETE',
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/voluntario/eliminar/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (!response.ok) {
-        throw new Error('Failed to delete volunteer');
+        throw new Error("Failed to delete volunteer");
       }
-      setAllVoluntarios(prev => prev.filter(v => v.idVoluntario !== id));
-      setFilteredVoluntarios(prev => prev.filter(v => v.idVoluntario !== id));
+      setAllVoluntarios((prev) => prev.filter((v) => v.idVoluntario !== id));
+      setFilteredVoluntarios((prev) =>
+        prev.filter((v) => v.idVoluntario !== id)
+      );
     } catch (error) {
-      console.error('Error deleting volunteer:', error);
-      setError('Error deleting volunteer. Please try again.');
+      console.error("Error deleting volunteer:", error);
+      setError("Error deleting volunteer. Please try again.");
     }
   };
 
   useEffect(() => {
     if (cargoVol.length > 0 && companiaVol.length > 0) {
-      setFilteredVoluntarios(prevFiltered => [...prevFiltered]);
+      setFilteredVoluntarios((prevFiltered) => [...prevFiltered]);
     }
   }, [cargoVol, companiaVol]);
 
@@ -183,7 +203,10 @@ export default function Busqueda() {
           </Button>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="flex items-center space-x-2 mb-6">
+          <form
+            onSubmit={handleSearch}
+            className="flex items-center space-x-2 mb-6"
+          >
             <div className="relative flex-grow">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -199,9 +222,7 @@ export default function Busqueda() {
             </Button>
           </form>
 
-          {error && (
-            <p className="text-red-500 mb-4">{error}</p>
-          )}
+          {error && <p className="text-red-500 mb-4">{error}</p>}
 
           {loading ? (
             <p className="text-center">Cargando datos de voluntarios...</p>
@@ -232,14 +253,23 @@ export default function Busqueda() {
                       <TableCell>{voluntario.tipoSangre}</TableCell>
                       <TableCell>{voluntario.claveRadial}</TableCell>
                       <TableCell>
-                        {cargoVol.find(cargo => cargo.idCargo === voluntario.idCargo)?.nombreCarg || 'N/A'}
+                        {cargoVol.find(
+                          (cargo) => cargo.idCargo === voluntario.idCargo
+                        )?.nombreCarg || "N/A"}
                       </TableCell>
                       <TableCell>
-                        {companiaVol.find(compania => compania.idCompania === parseInt(voluntario.idCompania))?.nombreCia || 'N/A'}
+                        {companiaVol.find(
+                          (compania) =>
+                            compania.idCompania ===
+                            parseInt(voluntario.idCompania)
+                        )?.nombreCia || "N/A"}
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                        <Link href={`/busqueda/editar/${voluntario.idVoluntario}`} passHref>
+                          <Link
+                            href={`/busqueda/editar/${voluntario.idVoluntario}`}
+                            passHref
+                          >
                             <Button variant="outline" size="sm">
                               Editar
                             </Button>
@@ -252,14 +282,24 @@ export default function Busqueda() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  ¿Estás seguro?
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. Esto eliminará permanentemente al voluntario {voluntario.nombreVol}.
+                                  Esta acción no se puede deshacer. Esto
+                                  eliminará permanentemente al voluntario{" "}
+                                  {voluntario.nombreVol}.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteVolunteer(voluntario.idVoluntario)}>
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    handleDeleteVolunteer(
+                                      voluntario.idVoluntario
+                                    )
+                                  }
+                                >
                                   Eliminar
                                 </AlertDialogAction>
                               </AlertDialogFooter>
@@ -278,4 +318,3 @@ export default function Busqueda() {
     </div>
   );
 }
-
