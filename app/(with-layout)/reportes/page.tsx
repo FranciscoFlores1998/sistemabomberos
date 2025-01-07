@@ -16,6 +16,7 @@ export default function ReportesPage() {
           <TabsTrigger value="emergencias">Emergencias</TabsTrigger>
         </TabsList>
 
+
         <TabsContent value="asistencia">
           <Card>
             <CardHeader>
