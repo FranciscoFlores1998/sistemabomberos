@@ -4,7 +4,7 @@ import Cookies from "js-cookie";
 
 export default function Header() {
   return (
-    <header className="bg-red-600 text-white p-4">
+    <header className="bg-blue-950 text-white p-4">
       <nav className="container mx-auto flex justify-between items-center">
         <Link href="/home" className="text-2xl font-bold">
           Sistema Bomberos
@@ -14,7 +14,7 @@ export default function Header() {
             <Link href="/home" className="hover:underline">
               Inicio
             </Link>
-          </li>
+          </li> 
           <li>
             <Link href="/parte-asistencia" className="hover:underline">Parte de Asistencia</Link>
           </li>

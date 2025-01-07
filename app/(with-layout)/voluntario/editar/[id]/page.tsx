@@ -31,7 +31,7 @@ interface CargoData {
   nombreCarg: string
 }
 
-const tiposSangre = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const tiposSangre = ["-","A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 export default function EditarVoluntario() {
   const router = useRouter()
@@ -39,7 +39,7 @@ export default function EditarVoluntario() {
   const [cargos, setCargos] = useState<CargoData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+  
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
@@ -66,7 +66,6 @@ export default function EditarVoluntario() {
         if (!voluntarioResponse.ok || !cargosResponse.ok) {
           throw new Error('Failed to fetch data')
         }
-
         const [voluntarioData, cargosData] = await Promise.all([
           voluntarioResponse.json(),
           cargosResponse.json()
@@ -161,17 +160,21 @@ export default function EditarVoluntario() {
         <form onSubmit={handleSubmit}>
           <CardContent>
             <div className="grid w-full items-center gap-4">
+            <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="idUsuario">Nombre de Usuario</Label>
+                <Input id="idUsuario" name="idUsuario" value={voluntario.idUsuario} disabled />
+              </div>
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="idVoluntario">ID Voluntario</Label>
-                <Input id="idVoluntario" name="idVoluntario" value={voluntario.idVoluntario} disabled />
+                <Label htmlFor="idUsuario">contraseña Usuario</Label>
+                <Input id="idUsuario" name="password" value={voluntario.idUsuario} disabled />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="nombreVol">Nombre</Label>
-                <Input id="nombreVol" name="nombreVol" value={voluntario.nombreVol} disabled />
+                <Input id="nombreVol" name="nombreVol" value={voluntario.nombreVol} />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaNac">Fecha de Nacimiento</Label>
-                <Input id="fechaNac" name="fechaNac" type="date" value={voluntario.fechaNac} disabled />
+                <Input id="fechaNac" name="fechaNac" type="date" value={voluntario.fechaNac}/>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
@@ -181,10 +184,7 @@ export default function EditarVoluntario() {
                 <Label htmlFor="rutVoluntario">RUT Voluntario</Label>
                 <Input id="rutVoluntario" name="rutVoluntario" value={voluntario.rutVoluntario} disabled />
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="idUsuario">ID Usuario</Label>
-                <Input id="idUsuario" name="idUsuario" value={voluntario.idUsuario} disabled />
-              </div>
+
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="direccion">Dirección</Label>
                 <Input id="direccion" name="direccion" value={voluntario.direccion} onChange={handleInputChange} />

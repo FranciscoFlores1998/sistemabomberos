@@ -98,11 +98,18 @@ export default function ParteAsistencia() {
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const filtered = allPartes.filter(
-      (parte) =>
-        parte.aCargoDelCuerpo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        parte.aCargoDeLaCompania.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        parte.folioPAsistencia.toString().includes(searchTerm)
-    );
+      (parte) => {
+      const tipoLlamadoNombre = tipoLlamado.find(
+        (tipo) => tipo.idTipoLlamado === parte.idTipoLlamado
+      )?.nombreTipoLlamado.toLowerCase();
+      return (
+        // parte.aCargoDelCuerpo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // parte.aCargoDeLaCompania.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        parte.folioPAsistencia.toString().includes(searchTerm) ||
+        (tipoLlamadoNombre &&
+          tipoLlamadoNombre.includes(searchTerm.toLowerCase()))
+      );
+    });
     setFilteredPartes(filtered);
   };
 
@@ -141,7 +148,7 @@ export default function ParteAsistencia() {
   return (
     <div className="container mx-auto py-10">
       <Card className="w-full max-w-7xl mx-auto mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className=" flex flex-row items-center justify-between">
           <CardTitle>Gestión de Partes de Asistencia</CardTitle>
           <Button onClick={handleCrearParte}>
             <Plus className="mr-2 h-4 w-4" />
@@ -154,7 +161,7 @@ export default function ParteAsistencia() {
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Buscar por folio, a cargo del cuerpo o compañía"
+                placeholder="Buscar por folio o tipo de llamado"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
@@ -205,6 +212,11 @@ export default function ParteAsistencia() {
                       <TableCell>{parte.totalAsistencia}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Link href={`/parte-asistencia/visualizar/${parte.folioPAsistencia}`} passHref>
+                            <Button variant="outline" size="sm">
+                              Visualizar
+                            </Button>
+                          </Link>
                           <Link href={`/parte-asistencia/editar/${parte.folioPAsistencia}`} passHref>
                             <Button variant="outline" size="sm">
                               Editar

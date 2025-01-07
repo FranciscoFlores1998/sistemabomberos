@@ -34,7 +34,6 @@ export default function CrearParteAsistencia() {
   const [date, setDate] = useState<Date>(new Date());
   const router = useRouter();
   const [formData, setFormData] = useState({
-    folioPAsistencia: "",
     aCargoDelCuerpo: "",
     aCargoDeLaCompania: "",
     fechaAsistencia: "",

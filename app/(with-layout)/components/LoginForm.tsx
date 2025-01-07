@@ -34,11 +34,12 @@ export default function LoginForm( ) {
     }
     const fetchData= await response.json();
     cookie.set("login",JSON.stringify(fetchData));
+    console.log(JSON.stringify(fetchData));
     router.push('/')
   };
 
   return (
-    <Card className="w-[350px]">
+    <Card className=" w-[350px]">
       <CardHeader>
         <CardTitle>Iniciar sesión</CardTitle>
       </CardHeader>

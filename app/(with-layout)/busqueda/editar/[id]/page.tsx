@@ -167,19 +167,19 @@ export default function EditarVoluntarioPage() {
 
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="nombreVol">Nombre</Label>
-                <Input id="nombreVol" name="nombreVol" value={voluntario.nombreVol} disabled />
+                <Input id="nombreVol" name="nombreVol" value={voluntario.nombreVol}/>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaNac">Fecha de Nacimiento</Label>
-                <Input id="fechaNac" name="fechaNac" type="date" value={voluntario.fechaNac} disabled />
+                <Input id="fechaNac" name="fechaNac" type="date" value={voluntario.fechaNac}/>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="fechaIngreso">Fecha de Ingreso</Label>
-                <Input id="fechaIngreso" name="fechaIngreso" type="date" value={voluntario.fechaIngreso} disabled />
+                <Input id="fechaIngreso" name="fechaIngreso" type="date" value={voluntario.fechaIngreso}/>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="rutVoluntario">RUT Voluntario</Label>
-                <Input id="rutVoluntario" name="rutVoluntario" value={voluntario.rutVoluntario} disabled />
+                <Input id="rutVoluntario" name="rutVoluntario" value={voluntario.rutVoluntario}/>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="direccion">Dirección</Label>
