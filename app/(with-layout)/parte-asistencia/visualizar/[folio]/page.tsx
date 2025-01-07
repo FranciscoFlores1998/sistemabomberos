@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,10 @@ interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
 }
-
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+}
 interface ParteAsistenciaData {
   folioPAsistencia: number;
   aCargoDelCuerpo: string;
@@ -34,6 +37,7 @@ export default function VisualizarParteAsistencia() {
   const router = useRouter();
   const [parteAsistencia, setParteAsistencia] = useState<ParteAsistenciaData | null>(null);
   const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([]);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,16 +46,27 @@ export default function VisualizarParteAsistencia() {
       setLoading(true);
       setError(null);
       try {
-        const folio = window.location.pathname.split('/').pop();
-        const [parteAsistenciaResponse, tipoCitacionResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/buscar/${folio}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
+        const folio = window.location.pathname.split("/").pop();
+        const [parteAsistenciaResponse, tipoCitacionResponse, voluntariosResponse] =
+          await Promise.all([
+            fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/buscar/${folio}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "ngrok-skip-browser-warning": "true",
+                },
+              }
+            ),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "ngrok-skip-browser-warning": "true",
+              },
+            }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -59,19 +74,19 @@ export default function VisualizarParteAsistencia() {
             },
           })
         ]);
-
-        if (!parteAsistenciaResponse.ok || !tipoCitacionResponse.ok) {
-          throw new Error('Failed to fetch data');
+        if (!parteAsistenciaResponse.ok || !tipoCitacionResponse.ok || !voluntariosResponse.ok) {
+          throw new Error("Failed to fetch data");
         }
-        const [parteAsistenciaData, tipoCitacionData] = await Promise.all([
+        const [parteAsistenciaData, tipoCitacionData, voluntariosData] = await Promise.all([
           parteAsistenciaResponse.json(),
-          tipoCitacionResponse.json()
+          tipoCitacionResponse.json(),
+          voluntariosResponse.json()
         ]);
-
+        setVoluntarios(voluntariosData);
         setParteAsistencia(parteAsistenciaData);
         setTipoCitacion(tipoCitacionData);
       } catch (err) {
-        setError('Error fetching data. Please try again.');
+        setError("Error fetching data. Please try again.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -86,7 +101,9 @@ export default function VisualizarParteAsistencia() {
       <div className="container mx-auto py-10">
         <Card className="w-full max-w-2xl mx-auto">
           <CardContent>
-            <p className="text-center">Cargando datos del parte de asistencia...</p>
+            <p className="text-center">
+              Cargando datos del parte de asistencia...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -110,7 +127,9 @@ export default function VisualizarParteAsistencia() {
       <div className="container mx-auto py-10">
         <Card className="w-full max-w-2xl mx-auto">
           <CardContent>
-            <p className="text-center">No se encontraron datos del parte de asistencia.</p>
+            <p className="text-center">
+              No se encontraron datos del parte de asistencia.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -118,8 +137,8 @@ export default function VisualizarParteAsistencia() {
   }
 
   const getTipoCitacionNombre = (id: number) => {
-    const tipo = tipoCitacion.find(t => t.idTipoLlamado === id);
-    return tipo ? tipo.nombreTipoLlamado : 'Desconocido';
+    const tipo = tipoCitacion.find((t) => t.idTipoLlamado === id);
+    return tipo ? tipo.nombreTipoLlamado : "Desconocido";
   };
 
   return (
@@ -156,11 +175,11 @@ export default function VisualizarParteAsistencia() {
             </div>
             <div className="flex flex-col space-y-1.5">
               <h3 className="font-semibold">Oficial a cargo del cuerpo</h3>
-              <p>{parteAsistencia.aCargoDelCuerpo}</p>
+              <p>{voluntarios.find(oCuerpo => oCuerpo.idVoluntario === parseInt(parteAsistencia.aCargoDelCuerpo))?.nombreVol}</p>
             </div>
             <div className="flex flex-col space-y-1.5">
               <h3 className="font-semibold">Oficial a cargo de la compañía</h3>
-              <p>{parteAsistencia.aCargoDeLaCompania}</p>
+              <p>{voluntarios.find(oCompania => oCompania.idVoluntario === parseInt(parteAsistencia.aCargoDeLaCompania))?.nombreVol}</p>
             </div>
             <div className="flex flex-col space-y-1.5">
               <h3 className="font-semibold">Total de asistencia</h3>
@@ -177,4 +196,3 @@ export default function VisualizarParteAsistencia() {
     </div>
   );
 }
-

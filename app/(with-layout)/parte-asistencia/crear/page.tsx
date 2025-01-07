@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
 import { DatePicker } from "@/components/ui/datepicker";
 import { formatearFecha } from "@/lib/formatearFecha";
 import {
@@ -23,14 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import toast, { Toaster } from "react-hot-toast";
 
 interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
 }
-
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+}
 export default function CrearParteAsistencia() {
   const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([]);
+  const [oficial, setOficial] = useState<Voluntario[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -44,6 +48,7 @@ export default function CrearParteAsistencia() {
     observaciones: "",
     idTipoLlamado: "",
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
   const handleChange = (
     e:
@@ -71,10 +76,44 @@ export default function CrearParteAsistencia() {
         [name]: value,
       }));
     }
+    // Clear the error for this field when it's changed
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      [name as string]: false,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const requiredFields = [
+      "idTipoLlamado",
+      "direccionAsistencia",
+      "horaInicio",
+      "horaFin",
+      "observaciones",
+      "aCargoDelCuerpo",
+      "totalAsistencia",
+    ];
+    const errors: Record<string, boolean> = {};
+    let hasError = false;
+
+    requiredFields.forEach((field) => {
+      const element = document.getElementById(field);
+      if (!formData[field as keyof typeof formData]) {
+        element?.classList.add("border-red-500");
+        hasError = true;
+      } else {
+        element?.classList.remove("border-red-500");
+      }
+    });
+
+    setFieldErrors(errors);
+
+    if (hasError) {
+      toast.error("Por favor, complete todos los campos requeridos.");
+      return;
+    }
+
     console.log(formData);
     formData.fechaAsistencia = formatearFecha(date.toISOString());
     try {
@@ -91,26 +130,16 @@ export default function CrearParteAsistencia() {
       );
 
       if (response.ok) {
-        toast({
-          title: "Parte de asistencia creado",
-          description: "El parte de asistencia se ha creado exitosamente.",
-        });
+        toast.success("El parte de asistencia se ha creado exitosamente.");
         router.push("/parte-asistencia");
       } else {
         const errorData = await response.json();
-        toast({
-          title: "Error",
-          description:
-            errorData.error || "Hubo un error al crear el parte de asistencia.",
-          variant: "destructive",
-        });
+        toast.error(
+          errorData.error || "Hubo un error al crear el parte de asistencia."
+        );
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Hubo un error al conectar con el servidor.",
-        variant: "destructive",
-      });
+      toast.error("Hubo un error al conectar con el servidor.");
     }
   };
 
@@ -132,22 +161,35 @@ export default function CrearParteAsistencia() {
           const dataTipoLlamado = await responseTipoLlamado.json();
           setTipoCitacion(dataTipoLlamado);
         } else {
-          toast({
-            title: "Error",
-            description: "Hubo un error al obtener el tipo de citación.",
-            variant: "destructive",
-          });
+          toast.error("Hubo un error al obtener el tipo de citación.");
         }
       } catch (error) {
         console.error("Error al obtener datos:", error);
-        toast({
-          title: "Error",
-          description: "Hubo un error al conectar con el servidor.",
-          variant: "destructive",
-        });
+        toast.error("Hubo un error al conectar con el servidor.");
       }
     };
+    const obtenerVoluntarios = async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
 
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        setOficial(data);
+      } else {
+        const errorData = await response.json();
+        console.error("Error al obtener los voluntarios:", errorData.error);
+      }
+    };
+    obtenerVoluntarios();
     obtenerDatos();
   }, []);
 
@@ -168,7 +210,11 @@ export default function CrearParteAsistencia() {
                   }
                   value={formData.idTipoLlamado}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    className={`w-full ${
+                      fieldErrors.idTipoLlamado ? "border-red-500" : ""
+                    }`}
+                  >
                     <SelectValue placeholder="Seleccione el tipo de llamado" />
                   </SelectTrigger>
                   <SelectContent>
@@ -191,6 +237,9 @@ export default function CrearParteAsistencia() {
                   value={formData.direccionAsistencia}
                   onChange={handleChange}
                   required
+                  className={
+                    fieldErrors.direccionAsistencia ? "border-red-500" : ""
+                  }
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -202,6 +251,7 @@ export default function CrearParteAsistencia() {
                   value={formData.horaInicio}
                   onChange={handleChange}
                   required
+                  className={fieldErrors.horaInicio ? "border-red-500" : ""}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -213,6 +263,7 @@ export default function CrearParteAsistencia() {
                   value={formData.horaFin}
                   onChange={handleChange}
                   required
+                  className={fieldErrors.horaFin ? "border-red-500" : ""}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -230,30 +281,63 @@ export default function CrearParteAsistencia() {
                   value={formData.observaciones}
                   onChange={handleChange}
                   required
+                  className={fieldErrors.observaciones ? "border-red-500" : ""}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDelCuerpo">
                   Oficial a cargo del cuerpo
                 </Label>
-                <Input
-                  id="aCargoDelCuerpo"
-                  name="aCargoDelCuerpo"
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "aCargoDelCuerpo")
+                  }
                   value={formData.aCargoDelCuerpo}
-                  onChange={handleChange}
-                  required
-                />
+                >
+                  <SelectTrigger id="aCargoDelCuerpo" className="w-full">
+                    <SelectValue placeholder="Seleccione un Oficial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    
+                  <SelectItem value="null">Ninguno</SelectItem>
+                    {oficial.map((option) => (
+                      <SelectItem
+                        key={option.idVoluntario}
+                        value={option.idVoluntario.toString()}
+                      >
+                        {option.idVoluntario} - {option.nombreVol}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDeLaCompania">
-                  Oficial a cargo de la compañía
+                  Oficial a cargo de la compañia
                 </Label>
-                <Input
-                  id="aCargoDeLaCompania"
-                  name="aCargoDeLaCompania"
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "aCargoDeLaCompania")
+                  }
                   value={formData.aCargoDeLaCompania}
-                  onChange={handleChange}
-                />
+                >
+                  <SelectTrigger id="aCargoDeLaCompania" className="w-full">
+                    <SelectValue placeholder="Seleccione un Oficial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    
+                  <SelectItem value="null">Ninguno</SelectItem>
+                    {oficial.map((option) => (
+                      <SelectItem
+                        key={option.idVoluntario}
+                        value={option.idVoluntario.toString()}
+                      >
+                        {option.idVoluntario} - {option.nombreVol}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="totalAsistencia">Total de asistencia</Label>
@@ -263,6 +347,9 @@ export default function CrearParteAsistencia() {
                   value={formData.totalAsistencia}
                   onChange={handleChange}
                   required
+                  className={
+                    fieldErrors.totalAsistencia ? "border-red-500" : ""
+                  }
                 />
               </div>
             </div>
@@ -275,6 +362,7 @@ export default function CrearParteAsistencia() {
           <Button onClick={handleSubmit}>Crear Parte de Asistencia</Button>
         </CardFooter>
       </Card>
+      <Toaster />
     </div>
   );
 }

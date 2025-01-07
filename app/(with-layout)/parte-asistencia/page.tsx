@@ -31,7 +31,10 @@ interface ParteAsistencia {
   observaciones: string;
   idTipoLlamado: number;
 }
-
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+}
 interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
@@ -45,10 +48,11 @@ export default function ParteAsistencia() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tipoLlamado, setTipoLlamado] = useState<TipoCitacion[]>([]);
-
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   useEffect(() => {
     fetchAllPartes();
     fetchTipoLlamado();
+    fetchVoluntario();
   }, []);
 
   const fetchAllPartes = async () => {
@@ -92,6 +96,24 @@ export default function ParteAsistencia() {
       setTipoLlamado(data);
     } catch (error) {
       console.error("Error fetching tipo llamado:", error);
+    }
+  };
+  const fetchVoluntario = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch voluntarios");
+      }
+      const data = await response.json();
+      setVoluntarios(data);
+    } catch (error) {
+      console.error("Error fetching voluntarios:", error);
     }
   };
 
@@ -203,8 +225,8 @@ export default function ParteAsistencia() {
                       <TableCell>
                         {tipoLlamado.find(llamado => llamado.idTipoLlamado === parte.idTipoLlamado)?.nombreTipoLlamado || 'N/A'}
                       </TableCell>
-                      <TableCell>{parte.aCargoDelCuerpo}</TableCell>
-                      <TableCell>{parte.aCargoDeLaCompania}</TableCell>
+                      <TableCell>{voluntarios.find(oCuerpo => oCuerpo.idVoluntario === parseInt(parte.aCargoDelCuerpo))?.nombreVol}</TableCell>
+                      <TableCell>{voluntarios.find(oCompania => oCompania.idVoluntario === parseInt(parte.aCargoDeLaCompania))?.nombreVol}</TableCell>
                       <TableCell>{parte.fechaAsistencia}</TableCell>
                       <TableCell>{parte.horaInicio}</TableCell>
                       <TableCell>{parte.horaFin}</TableCell>

@@ -1,7 +1,11 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -9,10 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/datepicker";
+import { formatearFecha } from "@/lib/formatearFecha";
 import {
   Select,
   SelectContent,
@@ -20,43 +22,141 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/datepicker";
-import { toast } from "@/components/ui/use-toast";
-import { formatearFecha } from "@/lib/formatearFecha";
+import toast, { Toaster } from "react-hot-toast";
 
 interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
 }
-
-interface ParteAsistenciaData {
-  folioPAsistencia: number;
-  aCargoDelCuerpo: string;
-  aCargoDeLaCompania: string;
-  fechaAsistencia: string;
-  horaInicio: string;
-  horaFin: string;
-  direccionAsistencia: string;
-  totalAsistencia: number;
-  observaciones: string;
-  idTipoLlamado: number;
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
 }
 
 export default function EditarParteAsistencia() {
-  const router = useRouter();
-  const [parteAsistencia, setParteAsistencia] = useState<ParteAsistenciaData | null>(null);
   const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([]);
-  const [date, setDate] =  useState<Date>(new Date());
+  const [oficial, setOficial] = useState<Voluntario[]>([]);
+  const [date, setDate] = useState<Date>(new Date());
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    folioPAsistencia: 0,
+    aCargoDelCuerpo: "",
+    aCargoDeLaCompania: "",
+    fechaAsistencia: "",
+    horaInicio: "",
+    horaFin: "",
+    direccionAsistencia: "",
+    totalAsistencia: "",
+    observaciones: "",
+    idTipoLlamado: "",
+  });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleChange = (
+    e:
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      | string
+      | Date,
+    name?: string
+  ) => {
+    if (e instanceof Date && name) {
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: e,
+      }));
+    } else if (typeof e === "string" && name) {
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: e,
+      }));
+    } else {
+      const { name, value } = (
+        e as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ).target;
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    }
+    // Clear the error for this field when it's changed
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      [name as string]: false,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const requiredFields = [
+      "idTipoLlamado",
+      "direccionAsistencia",
+      "horaInicio",
+      "horaFin",
+      "observaciones",
+      "aCargoDelCuerpo",
+      "totalAsistencia",
+    ];
+    const errors: Record<string, boolean> = {};
+    let hasError = false;
+
+    requiredFields.forEach((field) => {
+      const element = document.getElementById(field);
+      if (!formData[field as keyof typeof formData]) {
+        element?.classList.add("border-red-500");
+        errors[field] = true;
+        hasError = true;
+      } else {
+        element?.classList.remove("border-red-500");
+        errors[field] = false;
+      }
+    });
+
+    setFieldErrors(errors);
+
+    if (hasError) {
+      toast.error("Por favor, complete todos los campos requeridos.");
+      return;
+    }
+
+    const updatedFormData = {
+      ...formData,
+      fechaAsistencia: formatearFecha(date.toISOString()),
+    };
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/actualizar/${formData.folioPAsistencia}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify(updatedFormData),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("El parte de asistencia se ha actualizado exitosamente.");
+        router.push("/parte-asistencia");
+      } else {
+        const errorData = await response.json();
+        toast.error(
+          errorData.error || "Hubo un error al actualizar el parte de asistencia."
+        );
+      }
+    } catch (error) {
+      toast.error("Hubo un error al conectar con el servidor.");
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    const obtenerDatos = async () => {
       try {
         const folio = window.location.pathname.split('/').pop();
-        const [parteAsistenciaResponse, tipoCitacionResponse] = await Promise.all([
+        const [parteAsistenciaResponse, tipoCitacionResponse, voluntariosResponse] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/buscar/${folio}`, {
             method: "GET",
             headers: {
@@ -70,89 +170,40 @@ export default function EditarParteAsistencia() {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
             },
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
           })
         ]);
 
-        if (!parteAsistenciaResponse.ok || !tipoCitacionResponse.ok) {
+        if (!parteAsistenciaResponse.ok || !tipoCitacionResponse.ok || !voluntariosResponse.ok) {
           throw new Error('Failed to fetch data');
         }
-        const [parteAsistenciaData, tipoCitacionData] = await Promise.all([
+
+        const [parteAsistenciaData, tipoCitacionData, voluntariosData] = await Promise.all([
           parteAsistenciaResponse.json(),
-          tipoCitacionResponse.json()
+          tipoCitacionResponse.json(),
+          voluntariosResponse.json()
         ]);
 
-        setParteAsistencia(parteAsistenciaData);
+        setFormData(parteAsistenciaData);
         setTipoCitacion(tipoCitacionData);
+        setOficial(voluntariosData);
         setDate(new Date(parteAsistenciaData.fechaAsistencia));
-      } catch (err) {
-        setError('Error fetching data. Please try again.');
-        console.error(err);
-      } finally {
+        setLoading(false);
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
+        setError("Hubo un error al obtener los datos. Por favor, intente de nuevo.");
         setLoading(false);
       }
     };
 
-    fetchData();
+    obtenerDatos();
   }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!parteAsistencia || !date) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      const updatedData = {
-        ...parteAsistencia,
-        fechaAsistencia: formatearFecha(date.toDateString()),
-      };
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/actualizar/${parteAsistencia.folioPAsistencia}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-          body: JSON.stringify(updatedData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al actualizar el parte de asistencia");
-      }
-
-      toast({
-        title: "Parte de asistencia actualizado",
-        description: "El parte de asistencia se ha actualizado exitosamente.",
-      });
-      router.push("/parte-asistencia");
-    } catch (error) {
-      setError("Hubo un error al actualizar el parte de asistencia.");
-      toast({
-        title: "Error",
-        description: "Hubo un error al conectar con el servidor.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
-    name?: string
-  ) => {
-    if (!parteAsistencia) return;
-
-    if (typeof e === "string" && name) {
-      setParteAsistencia({ ...parteAsistencia, [name]: e });
-    } else if (typeof e === "object") {
-      const { name, value } = e.target;
-      setParteAsistencia({ ...parteAsistencia, [name]: value });
-    }
-  };
 
   if (loading) {
     return (
@@ -178,18 +229,6 @@ export default function EditarParteAsistencia() {
     );
   }
 
-  if (!parteAsistencia) {
-    return (
-      <div className="container mx-auto py-10">
-        <Card className="w-full max-w-2xl mx-auto">
-          <CardContent>
-            <p className="text-center">No se encontraron datos del parte de asistencia.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-10">
       <Card className="w-full max-w-2xl mx-auto">
@@ -205,9 +244,13 @@ export default function EditarParteAsistencia() {
                   onValueChange={(value) =>
                     handleChange(value, "idTipoLlamado")
                   }
-                  value={parteAsistencia.idTipoLlamado.toString()}
+                  value={formData.idTipoLlamado.toString()}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    className={`w-full ${
+                      fieldErrors.idTipoLlamado ? "border-red-500" : ""
+                    }`}
+                  >
                     <SelectValue placeholder="Seleccione el tipo de llamado" />
                   </SelectTrigger>
                   <SelectContent>
@@ -227,9 +270,12 @@ export default function EditarParteAsistencia() {
                 <Input
                   id="direccionAsistencia"
                   name="direccionAsistencia"
-                  value={parteAsistencia.direccionAsistencia}
+                  value={formData.direccionAsistencia}
                   onChange={handleChange}
                   required
+                  className={
+                    fieldErrors.direccionAsistencia ? "border-red-500" : ""
+                  }
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -238,9 +284,10 @@ export default function EditarParteAsistencia() {
                   id="horaInicio"
                   name="horaInicio"
                   type="time"
-                  value={parteAsistencia.horaInicio}
+                  value={formData.horaInicio}
                   onChange={handleChange}
                   required
+                  className={fieldErrors.horaInicio ? "border-red-500" : ""}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -249,9 +296,10 @@ export default function EditarParteAsistencia() {
                   id="horaFin"
                   name="horaFin"
                   type="time"
-                  value={parteAsistencia.horaFin}
+                  value={formData.horaFin}
                   onChange={handleChange}
                   required
+                  className={fieldErrors.horaFin ? "border-red-500" : ""}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -266,43 +314,75 @@ export default function EditarParteAsistencia() {
                 <Textarea
                   id="observaciones"
                   name="observaciones"
-                  value={parteAsistencia.observaciones}
+                  value={formData.observaciones}
                   onChange={handleChange}
                   required
+                  className={fieldErrors.observaciones ? "border-red-500" : ""}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDelCuerpo">
                   Oficial a cargo del cuerpo
                 </Label>
-                <Input
-                  id="aCargoDelCuerpo"
-                  name="aCargoDelCuerpo"
-                  value={parteAsistencia.aCargoDelCuerpo}
-                  onChange={handleChange}
-                  required
-                />
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "aCargoDelCuerpo")
+                  }
+                  value={formData.aCargoDelCuerpo}
+                >
+                  <SelectTrigger id="aCargoDelCuerpo" className="w-full">
+                    <SelectValue placeholder="Seleccione un Oficial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">Ninguno</SelectItem>
+                    {oficial.map((option) => (
+                      <SelectItem
+                        key={option.idVoluntario}
+                        value={option.idVoluntario.toString()}
+                      >
+                        {option.idVoluntario} - {option.nombreVol}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDeLaCompania">
-                  Oficial a cargo de la compañía
+                  Oficial a cargo de la compañia
                 </Label>
-                <Input
-                  id="aCargoDeLaCompania"
-                  name="aCargoDeLaCompania"
-                  value={parteAsistencia.aCargoDeLaCompania}
-                  onChange={handleChange}
-                />
+                <Select
+                  onValueChange={(value) =>
+                    handleChange(value, "aCargoDeLaCompania")
+                  }
+                  value={formData.aCargoDeLaCompania}
+                >
+                  <SelectTrigger id="aCargoDeLaCompania" className="w-full">
+                    <SelectValue placeholder="Seleccione un Oficial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">Ninguno</SelectItem>
+                    {oficial.map((option) => (
+                      <SelectItem
+                        key={option.idVoluntario}
+                        value={option.idVoluntario.toString()}
+                      >
+                        {option.idVoluntario} - {option.nombreVol}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="totalAsistencia">Total de asistencia</Label>
                 <Input
                   id="totalAsistencia"
                   name="totalAsistencia"
-                  type="number"
-                  value={parteAsistencia.totalAsistencia}
+                  value={formData.totalAsistencia}
                   onChange={handleChange}
                   required
+                  className={
+                    fieldErrors.totalAsistencia ? "border-red-500" : ""
+                  }
                 />
               </div>
             </div>
@@ -315,6 +395,7 @@ export default function EditarParteAsistencia() {
           <Button onClick={handleSubmit}>Actualizar Parte de Asistencia</Button>
         </CardFooter>
       </Card>
+      <Toaster />
     </div>
   );
 }
