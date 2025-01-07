@@ -120,28 +120,6 @@ export function EmergenciasReport() {
           )}
         </CardContent>
       </Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Folio</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Hora Inicio</TableHead>
-            <TableHead>Hora Fin</TableHead>
-            <TableHead>Dirección</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {partesEmergencia.slice(0, 5).map((parte) => (
-            <TableRow key={parte.folioPEmergencia}>
-              <TableCell>{parte.folioPEmergencia}</TableCell>
-              <TableCell>{parte.fechaEmergencia}</TableCell>
-              <TableCell>{parte.horaInicio}</TableCell>
-              <TableCell>{parte.horaFin}</TableCell>
-              <TableCell>{parte.direccionEmergencia}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
     </div>
   )
 }

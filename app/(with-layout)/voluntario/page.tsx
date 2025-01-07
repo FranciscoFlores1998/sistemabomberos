@@ -125,8 +125,7 @@ export default function Voluntario() {
             <DataItem label="Clave Radial" value={voluntario.claveRadial} />
             <DataItem label="Cargo Voluntario" value={voluntario.idCargo.toExponential()} />
             <DataItem label="RUT Voluntario" value={voluntario.rutVoluntario} />
-            <DataItem label="ID Compañía" value={voluntario.idCompania} />
-            <DataItem label="ID Usuario" value={voluntario.idUsuario || "No asignado"} />
+            <DataItem label="Compañía" value={voluntario.idCompania} />
           </div>
         </CardContent>
         <CardFooter>

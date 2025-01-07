@@ -80,7 +80,7 @@ export default function EditarUsuario() {
       })
       .then(() => {
         toast.success("Usuario actualizado exitosamente");
-        router.push("/");
+        router.push("/usuario");
         router.refresh();
       })
       .catch(error => {

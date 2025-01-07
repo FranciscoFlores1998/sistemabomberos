@@ -11,9 +11,11 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <p>
-              Bienvenido al Sistema de Bomberos. Este sistema está diseñado para ayudar en la gestión y
-              coordinación de las actividades del cuerpo de bomberos. Aquí encontrará herramientas para
-              el manejo de emergencias, inventario de equipos y programación de turnos.
+              Bienvenido al Sistema de Bomberos. 
+              Este sistema está diseñado para ayudar en la gestión y
+              coordinación de las actividades del cuerpo de bomberos. 
+              Aquí encontrará un apoyo digital para la administración de los partes de asistencia y emergencias.
+              
             </p>
           </CardContent>
         </Card>
@@ -23,10 +25,7 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <p>
-              - Se ha implementado un nuevo módulo de gestión de inventario.<br />
-              - Se ha mejorado el sistema de alertas para emergencias.<br />
-              - Se ha actualizado el calendario de turnos para mayor flexibilidad.<br />
-              - Se han añadido nuevos reportes estadísticos.
+              - Se han añadido nuevos reportes estadísticos.<br />
             </p>
           </CardContent>
         </Card>

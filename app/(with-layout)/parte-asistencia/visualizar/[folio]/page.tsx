@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatearFecha } from "@/lib/formatearFecha";
+import { usePDF } from 'react-to-pdf';
+import { Download } from 'lucide-react';
 
 interface TipoCitacion {
   idTipoLlamado: number;
@@ -40,6 +42,8 @@ export default function VisualizarParteAsistencia() {
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const { toPDF, targetRef } = usePDF({filename: 'parte-asistencia.pdf'});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,56 +147,71 @@ export default function VisualizarParteAsistencia() {
 
   return (
     <div className="container mx-auto py-10">
-      <Card className="w-full max-w-2xl mx-auto">
+      <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle>Visualizar Parte de Asistencia</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Parte de Asistencia</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Tipo de llamado</h3>
-              <p>{getTipoCitacionNombre(parteAsistencia.idTipoLlamado)}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Dirección</h3>
-              <p>{parteAsistencia.direccionAsistencia}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Hora de Inicio</h3>
-              <p>{parteAsistencia.horaInicio}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Hora de Fin</h3>
-              <p>{parteAsistencia.horaFin}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Fecha de Asistencia</h3>
-              <p>{formatearFecha(parteAsistencia.fechaAsistencia)}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Observaciones</h3>
-              <p>{parteAsistencia.observaciones}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Oficial a cargo del cuerpo</h3>
-              <p>{voluntarios.find(oCuerpo => oCuerpo.idVoluntario === parseInt(parteAsistencia.aCargoDelCuerpo))?.nombreVol}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Oficial a cargo de la compañía</h3>
-              <p>{voluntarios.find(oCompania => oCompania.idVoluntario === parseInt(parteAsistencia.aCargoDeLaCompania))?.nombreVol}</p>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <h3 className="font-semibold">Total de asistencia</h3>
-              <p>{parteAsistencia.totalAsistencia}</p>
-            </div>
-          </div>
+        <CardContent  ref={targetRef}>
+          <table className="w-full border-collapse">
+            <tbody>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Folio</td>
+                <td className="py-2 px-4">{parteAsistencia.folioPAsistencia}</td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Tipo de llamado</td>
+                <td className="py-2 px-4">{getTipoCitacionNombre(parteAsistencia.idTipoLlamado)}</td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Dirección</td>
+                <td className="py-2 px-4">{parteAsistencia.direccionAsistencia}</td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Hora de Inicio</td>
+                <td className="py-2 px-4">{parteAsistencia.horaInicio}</td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Hora de Fin</td>
+                <td className="py-2 px-4">{parteAsistencia.horaFin}</td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Fecha de Asistencia</td>
+                <td className="py-2 px-4">{formatearFecha(parteAsistencia.fechaAsistencia)}</td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Observaciones</td>
+                <td className="py-2 px-4">{parteAsistencia.observaciones}</td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Oficial a cargo del cuerpo</td>
+                <td className="py-2 px-4">
+                  {voluntarios.find(oCuerpo => oCuerpo.idVoluntario === parseInt(parteAsistencia.aCargoDelCuerpo))?.nombreVol}
+                </td>
+              </tr>
+              <tr className="border-b">
+                <td className="font-semibold py-2 px-4">Oficial a cargo de la compañía</td>
+                <td className="py-2 px-4">
+                  {voluntarios.find(oCompania => oCompania.idVoluntario === parseInt(parteAsistencia.aCargoDeLaCompania))?.nombreVol}
+                </td>
+              </tr>
+              <tr>
+                <td className="font-semibold py-2 px-4">Total de asistencia</td>
+                <td className="py-2 px-4">{parteAsistencia.totalAsistencia}</td>
+              </tr>
+            </tbody>
+          </table>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex justify-between mt-4">
           <Button variant="outline" onClick={() => router.back()}>
             Volver
+          </Button>
+          <Button onClick={() => toPDF()} className="bg-primary text-primary-foreground">
+            <Download className="mr-2 h-4 w-4" />
+            Descargar PDF
           </Button>
         </CardFooter>
       </Card>
     </div>
   );
 }
+

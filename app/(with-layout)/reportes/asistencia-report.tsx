@@ -86,24 +86,7 @@ export function AsistenciaReport() {
           )}
         </CardContent>
       </Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Folio</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Total Asistencia</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {partesAsistencia.slice(0, 5).map((parte) => (
-            <TableRow key={parte.folioPAsistencia}>
-              <TableCell>{parte.folioPAsistencia}</TableCell>
-              <TableCell>{parte.fechaAsistencia}</TableCell>
-              <TableCell>{parte.totalAsistencia}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      
     </div>
   )
 }

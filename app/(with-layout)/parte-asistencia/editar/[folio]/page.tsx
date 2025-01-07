@@ -22,15 +22,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import toast, { Toaster } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
+import { AgregarMovilesVoluntarios } from "@/components/AgregarMovilesVoluntarios";
 
 interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
 }
+
 interface Voluntario {
   idVoluntario: number;
   nombreVol: string;
+  claveRadial: string;
+}
+
+interface FormData {
+  folioPAsistencia: number | null;
+  aCargoDelCuerpo: string;
+  aCargoDeLaCompania: string;
+  fechaAsistencia: string;
+  horaInicio: string;
+  horaFin: string;
+  direccionAsistencia: string;
+  totalAsistencia: string;
+  observaciones: string;
+  idTipoLlamado: string;
 }
 
 export default function EditarParteAsistencia() {
@@ -38,8 +54,8 @@ export default function EditarParteAsistencia() {
   const [oficial, setOficial] = useState<Voluntario[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    folioPAsistencia: 0,
+  const [formData, setFormData] = useState<FormData>({
+    folioPAsistencia: null,
     aCargoDelCuerpo: "",
     aCargoDeLaCompania: "",
     fechaAsistencia: "",
@@ -80,7 +96,6 @@ export default function EditarParteAsistencia() {
         [name]: value,
       }));
     }
-    // Clear the error for this field when it's changed
     setFieldErrors((prevErrors) => ({
       ...prevErrors,
       [name as string]: false,
@@ -103,13 +118,12 @@ export default function EditarParteAsistencia() {
 
     requiredFields.forEach((field) => {
       const element = document.getElementById(field);
-      if (!formData[field as keyof typeof formData]) {
+      if (!formData[field as keyof FormData]) {
         element?.classList.add("border-red-500");
         errors[field] = true;
         hasError = true;
       } else {
         element?.classList.remove("border-red-500");
-        errors[field] = false;
       }
     });
 
@@ -120,7 +134,7 @@ export default function EditarParteAsistencia() {
       return;
     }
 
-    const updatedFormData = {
+    const submitData = {
       ...formData,
       fechaAsistencia: formatearFecha(date.toISOString()),
     };
@@ -134,7 +148,7 @@ export default function EditarParteAsistencia() {
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
           },
-          body: JSON.stringify(updatedFormData),
+          body: JSON.stringify(submitData),
         }
       );
 
@@ -148,6 +162,7 @@ export default function EditarParteAsistencia() {
         );
       }
     } catch (error) {
+      console.error("Error al guardar:", error);
       toast.error("Hubo un error al conectar con el servidor.");
     }
   };
@@ -158,21 +173,18 @@ export default function EditarParteAsistencia() {
         const folio = window.location.pathname.split('/').pop();
         const [parteAsistenciaResponse, tipoCitacionResponse, voluntariosResponse] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/buscar/${folio}`, {
-            method: "GET",
             headers: {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
             },
           }),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
-            method: "GET",
             headers: {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
             },
           }),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
-            method: "GET",
             headers: {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
@@ -247,6 +259,7 @@ export default function EditarParteAsistencia() {
                   value={formData.idTipoLlamado.toString()}
                 >
                   <SelectTrigger
+                    id="idTipoLlamado"
                     className={`w-full ${
                       fieldErrors.idTipoLlamado ? "border-red-500" : ""
                     }`}
@@ -348,7 +361,7 @@ export default function EditarParteAsistencia() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="aCargoDeLaCompania">
-                  Oficial a cargo de la compañia
+                  Oficial a cargo de la compañía
                 </Label>
                 <Select
                   onValueChange={(value) =>
@@ -395,6 +408,9 @@ export default function EditarParteAsistencia() {
           <Button onClick={handleSubmit}>Actualizar Parte de Asistencia</Button>
         </CardFooter>
       </Card>
+      {formData.folioPAsistencia && (
+        <AgregarMovilesVoluntarios folioPAsistencia={formData.folioPAsistencia} />
+      )}
       <Toaster />
     </div>
   );
