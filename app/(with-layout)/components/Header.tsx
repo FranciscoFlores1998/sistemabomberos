@@ -22,7 +22,7 @@ export default function Header() {
             <Link href="/parte-emergencia" className="hover:underline">Parte de Emergencia</Link>
           </li>
           <li>
-            <Link href="/estadisticas" className="hover:underline">Estadisticas</Link>
+            <Link href="/reportes" className="hover:underline">Reportes</Link>
           </li>
           <li>
             <Link href="/busqueda" className="hover:underline">Voluntarios</Link>
