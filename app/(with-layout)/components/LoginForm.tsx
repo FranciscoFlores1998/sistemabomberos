@@ -17,6 +17,7 @@ export default function LoginForm( ) {
         nombreUsuario: username,
         contrasena: password
      }
+     console.log(data);
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/login`,
       {
         method: "POST",
