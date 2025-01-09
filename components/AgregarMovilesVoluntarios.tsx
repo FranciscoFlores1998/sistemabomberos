@@ -26,10 +26,12 @@ interface Props {
 }
 
 export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
+  
   const [moviles, setMoviles] = useState<Movil[]>([]);
   const [movilesDisponibles, setMovilesDisponibles] = useState<Movil[]>([]);
   const [selectedMovil, setSelectedMovil] = useState<string>("");
   const [addedMoviles, setAddedMoviles] = useState<Movil[]>([]);
+  
   const [voluntariosDisponibles, setVoluntariosDisponibles] = useState<Voluntario[]>([]);
   const [selectedVoluntario, setSelectedVoluntario] = useState<string>("");
   const [addedVoluntarios, setAddedVoluntarios] = useState<Voluntario[]>([]);
@@ -151,6 +153,7 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
 
   return (
     <div className="mt-8">
+      {/* movil */}
       <div className="flex flex-col space-y-4 mt-6">
         <h3 className="text-lg font-semibold">
           Agregar Móviles al Parte de Asistencia
@@ -189,6 +192,7 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
           </ul>
         </div>
       </div>
+      {/* voluntario */}
       <div className="flex flex-col space-y-4 mt-6">
         <h3 className="text-lg font-semibold">
           Agregar Voluntarios al Parte de Asistencia
