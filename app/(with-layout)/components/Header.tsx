@@ -25,10 +25,10 @@ export default function Header() {
             <Link href="/reportes" className="hover:underline">Reportes</Link>
           </li>
           <li>
-            <Link href="/busqueda" className="hover:underline">Voluntarios</Link>
+            <Link href="/voluntario" className="hover:underline">Voluntarios</Link>
           </li>
           <li>
-            <Link href="/voluntario" className="hover:underline">Mis Datos</Link>
+            <Link href="/mis-datos" className="hover:underline">Mis Datos</Link>
           </li>
           <li>
             <Link href="/usuario" className="hover:underline">Control de usuarios</Link>
