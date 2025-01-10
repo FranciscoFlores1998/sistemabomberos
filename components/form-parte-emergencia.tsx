@@ -73,7 +73,7 @@ interface Victima {
   nombreVictima: string;
   edadVictima: number;
   descripcion: string;
-  folioPEmergencia: number;
+  folioPEmergencia: number | null;
 }
 
 interface Institucion {
@@ -107,23 +107,32 @@ export default function FormParteEmergencia({
 }: {
   params?: { folio: string };
 }) {
+  //Fecha
   const [date, setDate] = useState<Date>(new Date());
+  //Parte de asistencia
   const [parteAsistenciaOptions, setParteAsistenciaOptions] = useState<
     ParteAsistencia[]
   >([]);
+  //Materiales peligrosos
   const [materialesPeligrosos, setMaterialesPeligrosos] = useState<
     MaterialPeligroso[]
   >([]);
+  //Voluntarios
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  //Voluntarios disponibles
   const [voluntariosDisponibles, setVoluntariosDisponibles] = useState<
     Voluntario[]
   >([]);
+  //Check parte de emergencia completo
   const [parteEmergenciaCompleto, setParteEmergenciaCompleto] =
     useState<boolean>(false);
+  //Clave de emergencia
   const [claveemergencia, setClaveEmergencia] = useState<ClaveEmergencia[]>([]);
+  //Id parte de emergencia para crear o editar?
   const [idParteEmergencia, setIdParteEmergencia] = useState<string | null>(
     params?.folio ?? null
   );
+  //Form data para el parte de emergencia
   const [formData, setFormData] = useState<FormData>({
     folioPEmergencia: null,
     horaInicio: "",
@@ -139,18 +148,24 @@ export default function FormParteEmergencia({
     idMaterialP: null,
     isDescripcionDisabled: true,
   });
+  //Moviles sin USO 
   const [moviles, setMoviles] = useState<Movil[]>([]);
+  //Moviles disponibles
   const [movilesDisponibles, setMovilesDisponibles] = useState<Movil[]>([]);
+  //Moviles agregados
   const [selectedMovil, setSelectedMovil] = useState<string>("");
+  //Moviles agregados?
   const [addedMoviles, setAddedMoviles] = useState<Movil[]>([]);
+  //Voluntarios seleccionados
   const [selectedVoluntario, setSelectedVoluntario] = useState<string>("");
+  //Voluntarios agregados
   const [addedVoluntarios, setAddedVoluntarios] = useState<Voluntario[]>([]);
   const [victima, setVictima] = useState<Victima>({
     rutVictima: "",
     nombreVictima: "",
     edadVictima: 0,
     descripcion: "",
-    folioPEmergencia: 0,
+    folioPEmergencia: null,
   });
   const [institucion, setInstitucion] = useState<Institucion>({
     nombreInstitucion: "",

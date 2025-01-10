@@ -1,23 +1,26 @@
 'use client'
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import cookie from "js-cookie"
+import cookie from "js-cookie";
 import { useRouter } from "next/navigation";
+import { getUserFromCookie } from "@/utils/auth";
 
-export default function LoginForm( ) {
+export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data={
-        nombreUsuario: username,
-        contrasena: password
-     }
-     console.log(data);
+    const data = {
+      nombreUsuario: username,
+      contrasena: password
+    }
+    console.log(data);
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/login`,
       {
         method: "POST",
@@ -28,19 +31,24 @@ export default function LoginForm( ) {
         body: JSON.stringify(data),
       }
     );
-    if(response.status==401){
-      cookie.set("login","false");
-      alert("usuario o contraseña incorrecta");
+    if (response.status == 401) {
+      cookie.set("login", "false");
+      alert("Usuario o contraseña incorrecta");
       return;
     }
-    const fetchData= await response.json();
-    cookie.set("login",JSON.stringify(fetchData));
+    const fetchData = await response.json();
+    cookie.set("login", JSON.stringify(fetchData));
     console.log(JSON.stringify(fetchData));
+    
+    // Obtener el objeto de usuario después de iniciar sesión
+    const user = getUserFromCookie();
+    console.log("Usuario actual:", user);
+
     router.push('/')
   };
 
   return (
-    <Card className=" w-[350px]">
+    <Card className="w-[350px]">
       <CardHeader>
         <CardTitle>Iniciar sesión</CardTitle>
       </CardHeader>
@@ -76,3 +84,4 @@ export default function LoginForm( ) {
     </Card>
   );
 }
+

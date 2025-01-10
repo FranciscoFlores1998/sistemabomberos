@@ -1,15 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePickerPast } from "@/components/ui/datepicker-past";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,11 +15,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { formatearFecha } from "@/lib/formatearFecha";
 import { format, validate } from "@/lib/formatearRut";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import FallbackSpinner from "./ui/spinner";
-import { Checkbox } from "./ui/checkbox";
 import { Switch } from "./ui/switch";
-
 
 // Datos de muestra para los selectores
 const tiposSangre = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -45,25 +38,6 @@ interface Cargo {
   nombreCarg: string;
 }
 
-interface FormData {
-  nombreVol: string;
-  fechaNac: string;
-  fechaIngreso: string;
-  direccion: string;
-  numeroContacto: string;
-  tipoSangre: string;
-  enfermedades: string;
-  alergias: string;
-  claveRadial: string;
-  idCargo: string;
-  rutVoluntario: string;
-  idCompania: string;
-  idUsuario: number | null;
-  apellidop: string;
-  apellidom: string;
-  activo: boolean;
-}
-
 export default function FormVoluntario({
   params,
 }: {
@@ -76,35 +50,14 @@ export default function FormVoluntario({
   const [dateNac, setDateNac] = useState<Date>(new Date());
   const [dateIng, setDateIng] = useState<Date>(new Date());
   const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
-    nombreVol: "",
-    fechaNac: "",
-    fechaIngreso: "",
-    direccion: "",
-    numeroContacto: "",
-    tipoSangre: "",
-    enfermedades: "",
-    alergias: "",
-    claveRadial: "",
-    idCargo: "",
-    rutVoluntario: "",
-    idCompania: "",
-    idUsuario: null,
-    apellidop: "",
-    apellidom: "",
-    activo: true,
-  });
-
-  const [errors, setErrors] = useState({
-    apellidop: false,
-    apellidom: false,
-    nombreVol: false,
-    rutVoluntario: false,
-    direccion: false,
-    claveRadial: false,
-    idCompania: false,
-    idCargo: false,
-  });
+  const {
+    handleSubmit,
+    register,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm({ mode: "onChange" });
 
   const handleChangeRut = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -113,76 +66,14 @@ export default function FormVoluntario({
     const formattedRut = format(value);
     const isValid = validate(formattedRut);
     setIsRutValid(isValid);
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: formattedRut,
-    }));
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      [name]: !isValid,
-    }));
+    setValue("rutVoluntario", formattedRut);
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
-    name?: string
-  ) => {
-    if (typeof e === "string" && name) {
-      setFormData((prevState) => ({
-        ...prevState,
-        [name]: e,
-      }));
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: e === "",
-      }));
-    } else if (typeof e !== "string") {
-      const { name, value } = e.target;
-      setFormData((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: value === "",
-      }));
-    }
-  };
+  const onSubmit = async (data: any) => {
+    console.log(data);
+    data.fechaNac = formatearFecha(dateNac.toISOString());
+    data.fechaIngreso = formatearFecha(dateIng.toISOString());
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const requiredFields = [
-      "apellidop",
-      "apellidom",
-      "nombreVol",
-      "rutVoluntario",
-      "direccion",
-      "claveRadial",
-      "idCompania",
-      "idCargo",
-    ];
-    const newErrors = { ...errors };
-    let hasError = false;
-
-    requiredFields.forEach((field) => {
-      if (!formData[field as keyof typeof formData]) {
-        newErrors[field as keyof typeof errors] = true;
-        hasError = true;
-      }
-    });
-
-    if (hasError || !isRutValid) {
-      setErrors(newErrors);
-      toast.error("Por favor, complete los campos obligatorios.");
-      return;
-    }
-
-    const updatedFormData = {
-      ...formData,
-      fechaIngreso: formatearFecha(dateIng.toISOString()),
-      fechaNac: formatearFecha(dateNac.toISOString()),
-    };
-    console.log(updatedFormData);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/voluntario/guardar`,
@@ -192,17 +83,16 @@ export default function FormVoluntario({
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
           },
-          body: JSON.stringify(updatedFormData),
+          body: JSON.stringify(data),
         }
       );
-
       if (response.ok) {
         toast.success(
           params?.id
             ? "Voluntario actualizado exitosamente."
             : "Voluntario registrado exitosamente."
         );
-      router.push("/voluntario");
+        router.push("/voluntario");
       } else {
         const errorData = await response.json();
         toast.error(
@@ -243,8 +133,14 @@ export default function FormVoluntario({
         );
         if (response.ok) {
           const data = await response.json();
-          setFormData(data);
-
+          const val = {
+            ...data,
+            idCompania: null,
+            idCargo: null,
+          };
+          reset(val);
+          setValue("idCompania", data.idCompania.toString());
+          setValue("idCargo", data.idCargo.toString());
           setDateNac(new Date(data.fechaNac));
           setDateIng(new Date(data.fechaIngreso));
           setLoading(false);
@@ -301,13 +197,6 @@ export default function FormVoluntario({
       return [];
     }
   };
-  const handleChangeSwitch = (value: boolean, name: string) => {
-    console.log(value);
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  }
 
   useEffect(() => {
     fetchData();
@@ -325,7 +214,7 @@ export default function FormVoluntario({
           {loading ? (
             <FallbackSpinner />
           ) : (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid w-full items-center gap-4">
                 <Card className="w-full pt-3 ">
                   <CardContent>
@@ -337,10 +226,8 @@ export default function FormVoluntario({
                         <Label htmlFor="apellidop">Apellido Paterno</Label>
                         <Input
                           id="apellidop"
-                          name="apellidop"
-                          value={formData.apellidop}
-                          onChange={handleChange}
-                          required
+                          value={watch("apellidop")}
+                          {...register("apellidop", { required: true })}
                           className={errors.apellidop ? "border-red-500" : ""}
                         />
                       </div>
@@ -348,10 +235,8 @@ export default function FormVoluntario({
                         <Label htmlFor="apellidom">Apellido Materno</Label>
                         <Input
                           id="apellidom"
-                          name="apellidom"
-                          value={formData.apellidom}
-                          onChange={handleChange}
-                          required
+                          value={watch("apellidom")}
+                          {...register("apellidom", { required: true })}
                           className={errors.apellidom ? "border-red-500" : ""}
                         />
                       </div>
@@ -359,10 +244,8 @@ export default function FormVoluntario({
                         <Label htmlFor="nombreVol">Nombres</Label>
                         <Input
                           id="nombreVol"
-                          name="nombreVol"
-                          value={formData.nombreVol}
-                          onChange={handleChange}
-                          required
+                          value={watch("nombreVol")}
+                          {...register("nombreVol", { required: true })}
                           className={errors.nombreVol ? "border-red-500" : ""}
                         />
                       </div>
@@ -372,15 +255,16 @@ export default function FormVoluntario({
                         <Label htmlFor="rutVoluntario">RUT Voluntario</Label>
                         <Input
                           id="rutVoluntario"
-                          name="rutVoluntario"
-                          value={formData.rutVoluntario}
-                          onChange={handleChangeRut}
+                          value={watch("rutVoluntario")}
+                          {...register("rutVoluntario", {
+                            required: true,
+                            onChange: (e) => handleChangeRut(e),
+                          })}
                           className={`${
                             !isRutValid || errors.rutVoluntario
                               ? "border-red-500 focus:ring-red-500"
                               : ""
                           }`}
-                          required
                         />
                         {!isRutValid && (
                           <p className="text-red-500 text-sm">RUT inválido</p>
@@ -397,10 +281,8 @@ export default function FormVoluntario({
                         <Label htmlFor="direccion">Dirección</Label>
                         <Input
                           id="direccion"
-                          name="direccion"
-                          value={formData.direccion}
-                          onChange={handleChange}
-                          required
+                          value={watch("direccion")}
+                          {...register("direccion", { required: true })}
                           className={errors.direccion ? "border-red-500" : ""}
                         />
                       </div>
@@ -410,38 +292,32 @@ export default function FormVoluntario({
                         </Label>
                         <Input
                           id="numeroContacto"
-                          name="numeroContacto"
-                          value={formData.numeroContacto}
-                          onChange={handleChange}
-                          required
+                          value={watch("numeroContacto")}
+                          {...register("numeroContacto")}
                         />
                       </div>
                       <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="enfermedades">Enfermedades</Label>
                         <Textarea
                           id="enfermedades"
-                          name="enfermedades"
-                          value={formData.enfermedades}
-                          onChange={handleChange}
+                          value={watch("enfermedades")}
+                          {...register("enfermedades")}
                         />
                       </div>
                       <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="alergias">Alergias</Label>
                         <Textarea
                           id="alergias"
-                          name="alergias"
-                          value={formData.alergias}
-                          onChange={handleChange}
+                          value={watch("alergias")}
+                          {...register("alergias")}
                         />
                       </div>
                     </div>
                     <div className="flex flex-col space-y-1.5 mt-4">
                       <Label htmlFor="tipoSangre">Tipo de Sangre</Label>
                       <Select
-                        onValueChange={(value) =>
-                          handleChange(value, "tipoSangre")
-                        }
-                        value={formData.tipoSangre}
+                        onValueChange={(value) => setValue("tipoSangre", value)}
+                        value={watch("tipoSangre")}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Seleccione tipo de sangre" />
@@ -459,9 +335,12 @@ export default function FormVoluntario({
                 </Card>
                 {/*Datos de Bomberos*/}
                 <div className="flex items-center space-x-2">
-                  <Switch checked = {formData.activo} id="activo" 
-
-                  onCheckedChange={(value) => handleChangeSwitch(value, "activo")}
+                  <Switch
+                    checked={watch("activo")}
+                    id="activo"
+                    onCheckedChange={(value) =>
+                      setValue("activo", value || false)
+                    }
                   />
                   <Label htmlFor="activo">Voluntario activo</Label>
                 </div>
@@ -470,10 +349,8 @@ export default function FormVoluntario({
                     <Label htmlFor="claveRadial">Clave Radial</Label>
                     <Input
                       id="claveRadial"
-                      name="claveRadial"
-                      value={formData.claveRadial}
-                      onChange={handleChange}
-                      required
+                      value={watch("claveRadial")}
+                      {...register("claveRadial", { required: true })}
                       className={errors.claveRadial ? "border-red-500" : ""}
                     />
                   </div>
@@ -489,8 +366,8 @@ export default function FormVoluntario({
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="idCompania">Compañía</Label>
                   <Select
-                    onValueChange={(value) => handleChange(value, "idCompania")}
-                    value={formData.idCompania}
+                    onValueChange={(value) => setValue("idCompania", value)}
+                    value={watch("idCompania")}
                   >
                     <SelectTrigger
                       className={`w-full ${
@@ -514,8 +391,8 @@ export default function FormVoluntario({
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="idCargo">Cargo Voluntario</Label>
                   <Select
-                    onValueChange={(value) => handleChange(value, "idCargo")}
-                    value={formData.idCargo}
+                    onValueChange={(value) => setValue("idCargo", value)}
+                    value={watch("idCargo")}
                   >
                     <SelectTrigger
                       className={`w-full ${
@@ -537,22 +414,24 @@ export default function FormVoluntario({
                   </Select>
                 </div>
               </div>
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => router.back()}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    Object.values(errors).some((error) => error) || !isRutValid
+                  }
+                >
+                  {params?.id
+                    ? "Actualizar Voluntario"
+                    : "Registrar Voluntario"}
+                </Button>
+              </div>
             </form>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.back()}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              Object.values(errors).some((error) => error) || !isRutValid
-            }
-          >
-            {params?.id ? "Actualizar Voluntario" : "Registrar Voluntario"}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );

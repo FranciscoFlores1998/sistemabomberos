@@ -1,6 +1,7 @@
-'use client'
-import Link from "next/link";
+"use client";
+
 import Cookies from "js-cookie";
+import Link from "next/link";
 
 export default function Header() {
   return (
@@ -14,27 +15,46 @@ export default function Header() {
             <Link href="/home" className="hover:underline">
               Inicio
             </Link>
-          </li> 
-          <li>
-            <Link href="/parte-asistencia" className="hover:underline">Parte de Asistencia</Link>
           </li>
           <li>
-            <Link href="/parte-emergencia" className="hover:underline">Parte de Emergencia</Link>
+            <Link href="/parte-asistencia" className="hover:underline">
+              Parte de Asistencia
+            </Link>
           </li>
           <li>
-            <Link href="/reportes" className="hover:underline">Reportes</Link>
+            <Link href="/parte-emergencia" className="hover:underline">
+              Parte de Emergencia
+            </Link>
           </li>
           <li>
-            <Link href="/voluntario" className="hover:underline">Voluntarios</Link>
+            <Link href="/reportes" className="hover:underline">
+              Reportes
+            </Link>
           </li>
           <li>
-            <Link href="/mis-datos" className="hover:underline">Mis Datos</Link>
+            <Link href="/voluntario" className="hover:underline">
+              Voluntarios
+            </Link>
+          </li>
+          <Link
+            href="/mis-datos"
+            className="hover:underline"
+          >
+            Mis Datos
+          </Link>
+          <li>
+            <Link href="/usuario" className="hover:underline">
+              Control de usuarios
+            </Link>
           </li>
           <li>
-            <Link href="/usuario" className="hover:underline">Control de usuarios</Link>
-          </li>
-          <li>
-            <Link href="/" className="hover:underline" onClick={()=>Cookies.remove("login")}>Cerrar sesión</Link>
+            <Link
+              href="/"
+              className="hover:underline"
+              onClick={() => Cookies.remove("login")}
+            >
+              Cerrar sesión
+            </Link>
           </li>
         </ul>
       </nav>
