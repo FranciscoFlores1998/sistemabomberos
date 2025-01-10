@@ -24,6 +24,10 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { ChevronDown } from "lucide-react";
 import { AgregarMovilesVoluntarios } from "./AgregarMovilesVoluntarios";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { set } from "date-fns";
+import FallbackSpinner from "./ui/spinner";
 
 interface Voluntario {
   idVoluntario: number;
@@ -37,7 +41,7 @@ interface TipoCitacion {
 }
 
 interface FormData {
-  folioPAsistencia: number|null;
+  folioPAsistencia: number | null;
   aCargoDelCuerpo: string;
   aCargoDeLaCompania: string;
   fechaAsistencia: string;
@@ -54,159 +58,185 @@ export default function FormParteAsistencia({
 }: {
   params?: { folio: string };
 }) {
+  const [loading, setLoading] = useState(true);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const [citaciones, setCitaciones] = useState<TipoCitacion[]>([]);
-
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-
-  const [formData, setFormData] = useState<FormData>({
-    folioPAsistencia: null,
-    aCargoDelCuerpo: "",
-    aCargoDeLaCompania: "",
-    fechaAsistencia: "",
-    horaInicio: "",
-    horaFin: "",
-    direccionAsistencia: "",
-    totalAsistencia: "",
-    observaciones: "",
-    idTipoLlamado: "",
-  });
-  const [errors, setErrors] = useState({
-    aCargoDelCuerpo: false,
-    aCargoDeLaCompania: false,
-    horaInicio: false,
-    horaFin: false,
-    direccionAsistencia: false,
-    totalAsistencia: false,
-    idTipoLlamado: false,
-  });
   const [mostrarSegundaParte, setMostrarSegundaParte] = useState(false);
   const [mostrarBoton, setMostrarBoton] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const {
+    handleSubmit,
+    register,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm({ mode: "onChange" });
 
+  const [idParteAsistencia, setIdParteAsistencia] = useState<string | null>(
+    params?.folio ?? null
+  );
   const toggleSegundaParte = () => {
     setMostrarSegundaParte(true);
     setMostrarBoton(false);
   };
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
-    name?: string
-  ) => {
-    if (typeof e === "string" && name) {
-      setFormData((prevState) => ({
-        ...prevState,
-        [name]: e,
-      }));
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: e === "",
-      }));
-    } else if (typeof e !== "string") {
-      const { name, value } = e.target;
-      setFormData((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: value === "",
-      }));
-    }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const requiredFields = [
-      "aCargoDelCuerpo",
-      "aCargoDeLaCompania",
-      "horaInicio",
-      "horaFin",
-      "direccionAsistencia",
-      "totalAsistencia",
-      "idTipoLlamado",
-    ];
-    const newErrors = { ...errors };
-    let hasError = false;
-
-    requiredFields.forEach((field) => {
-      if (!formData[field as keyof typeof formData]) {
-        newErrors[field as keyof typeof errors] = true;
-        hasError = true;
-      }
-    });
-
-    if (hasError) {
-      setErrors(newErrors);
-      toast.error("Por favor, complete los campos obligatorios.");
-      return;
-    }
-
-    const updatedFormData = {
-      ...formData,
-      fechaAsistencia: formatearFecha(date.toISOString()),
-    };
-    console.log(updatedFormData);
+  const onSubmit = async (data: any) => {
+    data.fechaAsistencia = formatearFecha(date.toISOString());
+    console.log(data);
 
     try {
-      const response = await fetch("/api/parte-asistencia/crear", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify(updatedFormData),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/guardar`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify(data),
+        }
+      );
 
       if (response.ok) {
+        const data = await response.json();
         toast.success(
           params?.folio
-            ? "Parte de asistencia actualizado exitosamente"
+            ? "Parte de asistencia actualizo exitosamente"
             : "Parte de asistencia registrado exitosamente"
         );
-        const data = await response.json();
+        setIdParteAsistencia(data.folioPAsistencia);
+        setMostrarSegundaParte(true);
+        setMostrarBoton(false);
       } else {
         const errorData = await response.json();
-        throw new Error(
+        toast.error(
           errorData.error ||
-            `Hubo un error al ${
-              params?.folio ? "actualizar" : "registrar"
-            } el parte de asistencia.`
+            `Hubo un error al ${params?.folio ? "actualizar" : "registrar"}
+           el parte de asistencia.`
         );
       }
     } catch (error) {
       console.error("Error al guardar:", error);
       toast.error(
-        `Hubo un error al ${
-          params?.folio ? "actualizar" : "registrar"
-        } el parte de asistencia.`
+        `Hubo un error al ${params?.folio ? "actualizar" : "registrar"}
+           el parte de asistencia.`
       );
     }
-    setMostrarSegundaParte(true);
-    setMostrarBoton(false);
   };
+
+  const fetchData = async () => {
+    setLoading(true);
+    const voluntario = await obtenerVomuntarios();
+    setVoluntarios(voluntario);
+    const citacion = await obtenerCitaciones();
+    setCitaciones(citacion);
+
+    if (params?.folio) {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/buscar/${params.folio}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const val = {
+            ...data,
+            idTipoLlamado: null,
+            idVoluntario: null,
+          };
+          reset(val);
+          setDate(new Date(data.fechaAsistencia));
+          setValue("idTipoLlamado", data.idTipoLlamado.toString());
+          setValue("idVoluntario", data.idVoluntario);
+          setLoading(false);
+        } else {
+          toast.error("Hubo un error al obtener los datos.");
+        }
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
+        toast.error("Hubo un error al conectar con el servidor.");
+      }
+    } else {
+      setLoading(false);
+    }
+  };
+  const obtenerVomuntarios = async () => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    } else {
+      toast.error("Hubo un error al obtener los datos.");
+    }
+  };
+  const obtenerCitaciones = async () => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    } else {
+      toast.error("Hubo un error al obtener los datos.");
+    }
+  };
+  useEffect(() => {
+    fetchData();
+  }, [params?.folio]);
 
   ////////////////////////////////////////////////////////////////////////7
   return (
     <div className="container mx-auto py-10">
-      <Card>
-        <Card className="w-full max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle>Crear Parte de asistencia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit}>
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardHeader>
+          <CardTitle>
+            {params?.folio
+              ? "Editar Parte de Asistencia"
+              : "Registro de Partes de Asistencias"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <FallbackSpinner />
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid w-full items-center gap-4">
                 {/* Tipo ok*/}
-                <div className="flex flex-col space-y-1.5">
+                <div className="flex flex-col gap-y-2 space-y-1.5">
                   <Label htmlFor="idTipoLlamado">Tipo de asistencia</Label>
                   <Select
-                    onValueChange={(value) =>
-                      handleChange(value, "idTipoLlamado")
-                    }
-                    value={formData.idTipoLlamado}
+                    onValueChange={(value) => setValue("idTipoLlamado", value)}
+                    value={watch("idTipoLlamado")}
                   >
-                    <SelectTrigger id="idTipoLlamado" className="w-full">
+                    <SelectTrigger
+                      className={`w-full ${
+                        errors.idTipoLlamado ? "border-red-500" : ""
+                      }`}
+                    >
                       <SelectValue placeholder="Seleccione el tipo de asistencia" />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,62 +251,60 @@ export default function FormParteAsistencia({
                     </SelectContent>
                   </Select>
                 </div>
-                {/* Hora de Inicio */}
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="horaInicio">Hora de Inicio</Label>
-                  <Input
-                    id="horaInicio"
-                    name="horaInicio"
-                    type="time"
-                    value={formData.horaInicio}
-                    onChange={handleChange}
-                    required
-                    className="border-2 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                {/* Hora de Fin */}
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="horaFin">Hora de Fin</Label>
-                  <Input
-                    id="horaFin"
-                    name="horaFin"
-                    type="time"
-                    value={formData.horaFin}
-                    onChange={handleChange}
-                    required
-                    className="border-2 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                {/* Fecha */}
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="fechaAsistencia">Fecha</Label>
-                  <DatePicker
-                    date={date}
-                    setDate={(date) => setDate(date || new Date())}
-                  />
+                <div className="grid grid-cols-3  gap-y-3 mb-4">
+                  {/* Hora de Inicio */}
+                  <div className="flex flex-col gap-y-2 space-y-1.5">
+                    <Label htmlFor="horaInicio">Hora de Inicio</Label>
+                    <Input
+                      id="horaInicio"
+                      type="time"
+                      {...register("horaInicio", { required: true })}
+                      className={errors.horaInicio ? "border-red-500" : ""}
+                    />
+                  </div>
+                  {/* Hora de Fin */}
+                  <div className="flex flex-col gap-y-2 space-y-1.5">
+                    <Label htmlFor="horaFin">Hora de Fin</Label>
+                    <Input
+                      id="horaFin"
+                      type="time"
+                      {...register("horaFin", { required: true })}
+                      className={errors.horaFin ? "border-red-500" : ""}
+                    />
+                  </div>
+                  {/*Fecha */}
+                  <div className="flex flex-col gap-y-2  space-y-1.5">
+                    <Label htmlFor="fechaAsistencia">Fecha</Label>
+                    <DatePicker
+                      date={date}
+                      setDate={(date) => setDate(date || new Date())}
+                    />
+                  </div>
                 </div>
                 {/* Dirección */}
-                <div className="flex flex-col space-y-1.5">
+                <div className="flex flex-col gap-y-2 space-y-1.5">
                   <Label htmlFor="direccionAsistencia">Dirección</Label>
                   <Input
                     id="direccionAsistencia"
-                    name="direccionAsistencia"
-                    value={formData.direccionAsistencia}
-                    onChange={handleChange}
-                    required
-                    className="border-2 focus:ring-2 focus:ring-blue-500"
+                    value={watch("direccionAsistencia")}
+                    {...register("direccionAsistencia", { required: true })}
+                    className={
+                      errors.direccionAsistencia ? "border-red-500" : ""
+                    }
                   />
                 </div>
                 {/* A cargo del cuerpo */}
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="aCargoDelCuerpo">Oficial</Label>
+                <div className="flex flex-col gap-y-2 space-y-1.5">
+                  <Label htmlFor="aCargoDelCuerpo">
+                    Oficial a cargo del Cuerpo
+                  </Label>
                   <Select
                     onValueChange={(value) =>
-                      handleChange(value, "aCargoDelCuerpo")
+                      setValue("aCargoDelCuerpo", value)
                     }
-                    value={formData.aCargoDelCuerpo}
+                    value={watch("aCargoDelCuerpo")}
                   >
-                    <SelectTrigger id="aCargoDelCuerpo" className="w-full">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Seleccione un Oficial" />
                     </SelectTrigger>
                     <SelectContent>
@@ -292,15 +320,17 @@ export default function FormParteAsistencia({
                   </Select>
                 </div>
                 {/*Oficial de compania*/}
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="aCargoDeLaCompania">Oficial</Label>
+                <div className="flex flex-col gap-y-2 space-y-1.5">
+                  <Label htmlFor="aCargoDeLaCompania">
+                    Oficial de la Compañia
+                  </Label>
                   <Select
                     onValueChange={(value) =>
-                      handleChange(value, "aCargoDeLaCompania")
+                      setValue("aCargoDeLaCompania", value)
                     }
-                    value={formData.aCargoDeLaCompania}
+                    value={watch("aCargoDeLaCompania")}
                   >
-                    <SelectTrigger id="aCargoDeLaCompania" className="w-full">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Seleccione un Oficial" />
                     </SelectTrigger>
                     <SelectContent>
@@ -316,15 +346,12 @@ export default function FormParteAsistencia({
                   </Select>
                 </div>
                 {/* observaciones */}
-                <div className="flex flex-col space-y-1.5">
+                <div className="flex flex-col gap-y-2 space-y-1.5">
                   <Label htmlFor="observaciones">observaciones</Label>
                   <Textarea
                     id="observaciones"
-                    name="observaciones"
-                    value={formData.observaciones}
-                    onChange={handleChange}
-                    required
-                    className="border-2 focus:ring-2 focus:ring-blue-500"
+                    value={watch("observaciones")}
+                    {...register("observaciones", { required: true })}
                   />
                 </div>
                 {mostrarBoton && (
@@ -346,25 +373,31 @@ export default function FormParteAsistencia({
                       : "max-h-0 opacity-0"
                   }`}
                 >
-                <>
-                {formData.folioPAsistencia && (
-                  <AgregarMovilesVoluntarios
-                    folioPAsistencia={formData.folioPAsistencia}
-                  />)}
-                </>
+                  <>
+                    {idParteAsistencia && (
+                      <AgregarMovilesVoluntarios
+                        folioPAsistencia={parseInt(idParteAsistencia)}
+                      />
+                    )}
+                  </>
                 </div>
               </div>
             </form>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={() => window.history.back()}>
-              Cancelar
-            </Button>
-            <Button type="submit" onClick={handleSubmit}>
-              Guardar Parte de asistencia
-            </Button>
-          </CardFooter>
-        </Card>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button variant="outline" onClick={() => router.back()}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={Object.values(errors).some((error) => error)}
+          >
+            {params?.folio
+              ? "Actualizar Parte de Asistencia"
+              : "Registrar Parte de Asistencia"}
+          </Button>
+        </CardFooter>
       </Card>
       <Toaster />
       <style jsx>{`

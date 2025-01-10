@@ -26,13 +26,14 @@ interface Props {
 }
 
 export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
-  
   const [moviles, setMoviles] = useState<Movil[]>([]);
   const [movilesDisponibles, setMovilesDisponibles] = useState<Movil[]>([]);
   const [selectedMovil, setSelectedMovil] = useState<string>("");
   const [addedMoviles, setAddedMoviles] = useState<Movil[]>([]);
-  
-  const [voluntariosDisponibles, setVoluntariosDisponibles] = useState<Voluntario[]>([]);
+
+  const [voluntariosDisponibles, setVoluntariosDisponibles] = useState<
+    Voluntario[]
+  >([]);
   const [selectedVoluntario, setSelectedVoluntario] = useState<string>("");
   const [addedVoluntarios, setAddedVoluntarios] = useState<Voluntario[]>([]);
 
@@ -51,13 +52,13 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
             },
-          })
+          }),
         ]);
 
         if (responseMoviles.ok && responseVoluntarios.ok) {
           const [dataMoviles, dataVoluntarios] = await Promise.all([
             responseMoviles.json(),
-            responseVoluntarios.json()
+            responseVoluntarios.json(),
           ]);
 
           setMoviles(dataMoviles);
@@ -84,17 +85,20 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
     if (!movilToAdd) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia-movil/crear`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify({
-          folioPAsistencia: folioPAsistencia,
-          idMovil: movilToAdd.idMovil,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia-movil/crear`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify({
+            folioPAsistencia: folioPAsistencia,
+            idMovil: movilToAdd.idMovil,
+          }),
+        }
+      );
 
       if (response.ok) {
         setAddedMoviles([...addedMoviles, movilToAdd]);
@@ -121,17 +125,20 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
     if (!voluntarioToAdd) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia-voluntario/crear`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify({
-          folioPAsistencia: folioPAsistencia,
-          idVoluntario: voluntarioToAdd.idVoluntario,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia-voluntario/crear`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify({
+            folioPAsistencia: folioPAsistencia,
+            idVoluntario: voluntarioToAdd.idVoluntario,
+          }),
+        }
+      );
 
       if (response.ok) {
         setAddedVoluntarios([...addedVoluntarios, voluntarioToAdd]);
@@ -159,10 +166,7 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
           Agregar Móviles al Parte de Asistencia
         </h3>
         <div className="flex space-x-2">
-          <Select
-            value={selectedMovil}
-            onValueChange={setSelectedMovil}
-          >
+          <Select value={selectedMovil} onValueChange={setSelectedMovil}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Seleccione un Móvil" />
             </SelectTrigger>
@@ -180,9 +184,7 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
           <Button onClick={handleAddMovil}>Agregar Móvil</Button>
         </div>
         <div className="mt-4">
-          <h4 className="text-md font-semibold mb-2">
-            Móviles Agregados:
-          </h4>
+          <h4 className="text-md font-semibold mb-2">Móviles Agregados:</h4>
           <ul className="list-disc pl-5">
             {addedMoviles.map((movil) => (
               <li key={movil.idMovil}>
@@ -216,14 +218,10 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={handleAddVoluntario}>
-            Agregar Voluntario
-          </Button>
+          <Button onClick={handleAddVoluntario}>Agregar Voluntario</Button>
         </div>
         <div className="mt-4">
-          <h4 className="text-md font-semibold mb-2">
-            Voluntarios Agregados:
-          </h4>
+          <h4 className="text-md font-semibold mb-2">Voluntarios Agregados:</h4>
           <ul className="list-disc pl-5">
             {addedVoluntarios.map((voluntario) => (
               <li key={voluntario.idVoluntario}>
@@ -236,4 +234,3 @@ export function AgregarMovilesVoluntarios({ folioPAsistencia }: Props) {
     </div>
   );
 }
-
