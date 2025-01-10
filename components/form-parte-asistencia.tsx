@@ -40,19 +40,6 @@ interface TipoCitacion {
   nombreTipoLlamado: string;
 }
 
-interface FormData {
-  folioPAsistencia: number | null;
-  aCargoDelCuerpo: string;
-  aCargoDeLaCompania: string;
-  fechaAsistencia: string;
-  horaInicio: string;
-  horaFin: string;
-  direccionAsistencia: string;
-  totalAsistencia: string;
-  observaciones: string;
-  idTipoLlamado: string;
-}
-
 export default function FormParteAsistencia({
   params,
 }: {
@@ -77,10 +64,6 @@ export default function FormParteAsistencia({
   const [idParteAsistencia, setIdParteAsistencia] = useState<string | null>(
     params?.folio ?? null
   );
-  const toggleSegundaParte = () => {
-    setMostrarSegundaParte(true);
-    setMostrarBoton(false);
-  };
 
   const onSubmit = async (data: any) => {
     data.fechaAsistencia = formatearFecha(date.toISOString());
@@ -147,6 +130,8 @@ export default function FormParteAsistencia({
         );
         if (response.ok) {
           const data = await response.json();
+          console.log(data);
+
           const val = {
             ...data,
             idTipoLlamado: null,
@@ -354,15 +339,31 @@ export default function FormParteAsistencia({
                     {...register("observaciones", { required: true })}
                   />
                 </div>
+                {/* Total de Voluntarios */}
+                <div className="flex flex-col gap-y-2 space-y-1.5">
+                  <Label htmlFor="totalAsistencia">total Asistencia</Label>
+                  <Input
+                    id="totalAsistencia"
+                    value={watch("totalAsistencia")}
+                    {...register("totalAsistencia", { required: true })}
+                    className={
+                      errors.direccionAsistencia ? "border-red-500" : ""
+                    }
+                  />
+                </div>
                 {mostrarBoton && (
                   <div className="flex justify-center">
+                    <Button variant="outline" onClick={() => router.back()}>
+                      Cancelar
+                    </Button>
                     <Button
-                      type="button"
-                      onClick={toggleSegundaParte}
-                      className="flex items-center"
+                      type="submit"
+                      onClick={handleSubmit(onSubmit)}
+                      disabled={Object.values(errors).some((error) => error)}
                     >
-                      Mostrar más campos
-                      <ChevronDown className="ml-2" />
+                      {params?.folio
+                        ? "Actualizar Parte de Asistencia"
+                        : "Registrar Parte de Asistencia"}
                     </Button>
                   </div>
                 )}
@@ -391,6 +392,7 @@ export default function FormParteAsistencia({
           </Button>
           <Button
             type="submit"
+            onClick={handleSubmit(onSubmit)}
             disabled={Object.values(errors).some((error) => error)}
           >
             {params?.folio
