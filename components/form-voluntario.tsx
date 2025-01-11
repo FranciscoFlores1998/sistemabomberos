@@ -23,7 +23,7 @@ import FallbackSpinner from "./ui/spinner";
 import { Switch } from "./ui/switch";
 
 // Datos de muestra para los selectores
-const tiposSangre = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const tiposSangre = ["-", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 interface Compania {
   idCompania: number;
@@ -46,7 +46,6 @@ export default function FormVoluntario({
   const [companiaVol, setCompanias] = useState<Compania[]>([]);
   const [loading, setLoading] = useState(true);
   const [cargoVol, setCargos] = useState<Cargo[]>([]);
-  const [isRutValid, setIsRutValid] = useState(true);
   const [dateNac, setDateNac] = useState<Date>(new Date());
   const [dateIng, setDateIng] = useState<Date>(new Date());
   const router = useRouter();
@@ -56,6 +55,7 @@ export default function FormVoluntario({
     watch,
     setValue,
     reset,
+    clearErrors,
     formState: { errors },
   } = useForm({ mode: "onChange" });
 
@@ -65,7 +65,8 @@ export default function FormVoluntario({
     const { name, value } = e.target;
     const formattedRut = format(value);
     const isValid = validate(formattedRut);
-    setIsRutValid(isValid);
+    if (isValid) clearErrors("rutVoluntario");
+
     setValue("rutVoluntario", formattedRut);
   };
 
@@ -73,6 +74,7 @@ export default function FormVoluntario({
     console.log(data);
     data.fechaNac = formatearFecha(dateNac.toISOString());
     data.fechaIngreso = formatearFecha(dateIng.toISOString());
+    data.activo = data.activo || false;
 
     try {
       const response = await fetch(
@@ -261,12 +263,12 @@ export default function FormVoluntario({
                             onChange: (e) => handleChangeRut(e),
                           })}
                           className={`${
-                            !isRutValid || errors.rutVoluntario
+                            errors.rutVoluntario
                               ? "border-red-500 focus:ring-red-500"
                               : ""
                           }`}
                         />
-                        {!isRutValid && (
+                        {errors.rutVoluntario && (
                           <p className="text-red-500 text-sm">RUT inválido</p>
                         )}
                       </div>
@@ -366,7 +368,11 @@ export default function FormVoluntario({
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="idCompania">Compañía</Label>
                   <Select
-                    onValueChange={(value) => setValue("idCompania", value)}
+                    {...register("idCompania", { required: true })}
+                    onValueChange={(value) => {
+                      setValue("idCompania", value);
+                      clearErrors("idCompania");
+                    }}
                     value={watch("idCompania")}
                   >
                     <SelectTrigger
@@ -391,7 +397,11 @@ export default function FormVoluntario({
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="idCargo">Cargo Voluntario</Label>
                   <Select
-                    onValueChange={(value) => setValue("idCargo", value)}
+                    {...register("idCargo", { required: true })}
+                    onValueChange={(value) => {
+                      setValue("idCargo", value);
+                      clearErrors("idCargo");
+                    }}
                     value={watch("idCargo")}
                   >
                     <SelectTrigger
@@ -414,15 +424,13 @@ export default function FormVoluntario({
                   </Select>
                 </div>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between mt-6">
                 <Button variant="outline" onClick={() => router.back()}>
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
-                  disabled={
-                    Object.values(errors).some((error) => error) || !isRutValid
-                  }
+                  disabled={Object.values(errors).some((error) => error)}
                 >
                   {params?.id
                     ? "Actualizar Voluntario"
