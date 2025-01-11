@@ -50,7 +50,8 @@ export default function FormParteAsistencia({
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [voluntariosResponse, citacionesResponse] = await Promise.all([
+      const [voluntariosResponse, citacionesResponse] 
+      = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
           headers: {
             "Content-Type": "application/json",

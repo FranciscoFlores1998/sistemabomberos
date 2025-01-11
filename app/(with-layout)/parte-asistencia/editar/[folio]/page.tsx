@@ -1,4 +1,4 @@
-import TwoStepAttendanceForm from "@/components/two-step-parte-asistencia"
+import TwoStepAttendanceForm from "@/components/dos-pasos-parte-asistencia"
 
 export default async function Page({
     params,
