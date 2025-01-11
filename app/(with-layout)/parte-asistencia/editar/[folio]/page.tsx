@@ -1,4 +1,3 @@
-import FormParteAsistencia from "@/components/form-parte-asistencia"
 import TwoStepAttendanceForm from "@/components/two-step-parte-asistencia"
 
 export default async function Page({

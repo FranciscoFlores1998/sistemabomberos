@@ -9,6 +9,7 @@ import FormParteAsistencia from './form-parte-asistencia'
 import { AgregarMovilesVoluntarios } from './AgregarMovilesVoluntarios'
 import { Toaster } from 'react-hot-toast'
 import toast from 'react-hot-toast'
+import { EditarMovilesVoluntarios } from './EditarMovilesVoluntarios'
 
 export default function TwoStepAttendanceForm({ params }: { params?: { folio: string } }) {
   const [step, setStep] = useState(1)
