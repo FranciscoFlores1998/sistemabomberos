@@ -57,7 +57,7 @@ export default function FormVoluntario({
     reset,
     clearErrors,
     formState: { errors },
-  } = useForm({ mode: "onChange" });
+  } = useForm({ mode: "onChange", });
 
   const handleChangeRut = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

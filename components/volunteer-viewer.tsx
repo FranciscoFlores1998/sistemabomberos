@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getUserFromCookie } from "@/utils/auth";
+
 
 interface Cargo {
   idCargo: number;
