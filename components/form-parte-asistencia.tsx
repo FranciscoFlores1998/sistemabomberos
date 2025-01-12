@@ -1,19 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  useForm,
-  FormProvider,
-  useFormContext,
-  Controller,
-} from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/datepicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/datepicker";
-import { formatearFecha } from "@/lib/formatearFecha";
 import {
   Select,
   SelectContent,
@@ -21,7 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { formatearFecha } from "@/lib/formatearFecha";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Toaster, toast } from "react-hot-toast";
 import FallbackSpinner from "./ui/spinner";
 
@@ -48,15 +43,12 @@ export default function FormParteAsistencia({
   params?: { folio: string };
 }) {
   const [loading, setLoading] = useState(true);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [oficialDeCompania, setOficialDeCompania] = useState<Voluntario[]>([]);
   const [citaciones, setCitaciones] = useState<TipoCitacion[]>([]);
   const [date, setDate] = useState<Date>(new Date());
-  const [showSecondPart, setShowSecondPart] = useState(false);
-  const [idParteAsistencia, setIdParteAsistencia] = useState<number | null>(
-    null
-  );
+
   const [moviles, setMoviles] = useState<Movil[]>([]);
-  const [movilesDisponibles, setMovilesDisponibles] = useState<Movil[]>([]);
+
   const [voluntariosDisponibles, setVoluntariosDisponibles] = useState<
     Voluntario[]
   >([]);
@@ -69,7 +61,6 @@ export default function FormParteAsistencia({
     register,
     setValue,
     watch,
-    control,
     handleSubmit,
     clearErrors,
     formState: { errors },
@@ -121,6 +112,20 @@ export default function FormParteAsistencia({
       toast.error("Hubo un error al conectar con el servidor.");
     }
   };
+  const handleAddVoluntario = (voluntarioId: string) => {
+    const voluntario = oficialDeCompania.find(
+      (voluntario) => voluntario.idVoluntario === Number(voluntarioId)
+    );
+    if (voluntario) {
+      setAddedVoluntarios((prev) => [...prev, voluntario]);
+
+      setVoluntariosDisponibles((prev) =>
+        prev.filter(
+          (voluntario) => voluntario.idVoluntario !== Number(voluntarioId)
+        )
+      );
+    }
+  };
   const getMoviles = async () => {
     try {
       const response = await fetch(
@@ -144,6 +149,19 @@ export default function FormParteAsistencia({
       toast.error("Hubo un error al conectar con el servidor.");
     }
   };
+  const handleAddMovil = (movilId: string) => {
+    console.log("movilId", movilId);
+    //tiene que agregar al addedMoviles el movil seleccionado y elimiarlo de movilesDisponibles
+    const movil = moviles.find((movil) => movil.idMovil === Number(movilId));
+    console.log("movil", movil);
+    if (movil) {
+      setAddedMoviles((prev) => [...prev, movil]);
+      //eliminar el movil de moviles
+      setMoviles((prev) =>
+        prev.filter((movil) => movil.idMovil !== Number(movilId))
+      );
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -151,7 +169,7 @@ export default function FormParteAsistencia({
     const voluntariosData = await getVoluntarios();
     const citacionesData = await getTipoAsistencia();
     const movilesData = await getMoviles();
-    setVoluntarios(voluntariosData);
+    setOficialDeCompania(voluntariosData);
     setVoluntariosDisponibles(voluntariosData);
     setCitaciones(citacionesData);
     setMoviles(movilesData);
@@ -159,29 +177,70 @@ export default function FormParteAsistencia({
     setLoading(false);
   };
 
+  const fetchDataIdFolio = async () => {
+    setLoading(true);
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/buscar/${params?.folio}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      setValue("tipoCitacion", data.idTipoLlamado.toString());
+      setValue("horaInicio", data.horaInicio);
+      setValue("horaFin", data.horaFin);
+      setValue("direccionAsistencia", data.direccionAsistencia);
+      setValue("oficialCargo", data.aCargoDelCuerpo.toString());
+      setValue("oficialCompania", data.aCargoDeLaCompania.toString());
+      setValue("observaciones", data.observaciones);
+      setValue("totalAsistencia", data.totalAsistencia.toString());
+      setDate(new Date(data.fechaAsistencia));
+      setValue("fechaAsistencia", formatearFecha(data.fechaAsistencia));
+
+      const voluntariosData = await getVoluntarios();
+      const citacionesData = await getTipoAsistencia();
+      const movilesData = await getMoviles();
+      setOficialDeCompania(voluntariosData);
+
+      setCitaciones(citacionesData);
+      //eliminar los moviles agregados de todos los moviles disponibles
+      console.log("data.moviles", data.moviles);
+      if (data.moviles.length > 0 && data) {
+        const filtredMoviles = movilesData.filter((movil) => {
+          return !data.moviles.some((movilAdded) => movilAdded.idMovil === movil.idMovil);
+
+        })
+        console.log("filtredMoviles", filtredMoviles);
+        setMoviles(filtredMoviles);
+        setAddedMoviles(data.moviles);
+      }
+      //eliminar los voluntarios agregados de todos los voluntarios disponibles
+      if (data.voluntarios.length > 0 && data) {
+        const filtredVoluntarios = voluntariosData.filter((voluntario) => {
+          return !data.voluntarios.some((voluntarioAdded) => voluntarioAdded.idVoluntario === voluntario.idVoluntario);
+        })
+        setVoluntariosDisponibles(filtredVoluntarios);
+        setAddedVoluntarios(data.voluntarios);
+      }
+      
+
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchData();
+    params?.folio ? fetchDataIdFolio() : fetchData();
   }, [params?.folio]);
 
   const onSubmitAttendance = async (data: any) => {
     console.log("data", data);
     const dataSend = {
-      // {
-      //   "parteAsistencia": {
-      //     "aCargoDelCuerpo": 82,
-      //     "aCargoDeLaCompania": 82,
-      //     "fechaAsistencia": "2025-01-11",
-      //     "horaInicio": "08:00:00",
-      //     "horaFin": "12:00:00",
-      //     "direccionAsistencia": "123 Main Street, Chillán",
-      //     "totalAsistencia": 30,
-      //     "observaciones": "Se agregaron más asistentes.",
-      //     "idTipoLlamado": 2
-      //   },
-      //   "moviles": [1, 2, 3],
-      //   "voluntarios": [81, 82, 83]
-      // }
       parteAsistencia: {
+        ...(params?.folio && { folioPAsistencia: Number(params.folio) }),
         aCargoDelCuerpo: Number(data.oficialCargo),
         aCargoDeLaCompania: Number(data.oficialCompania),
         fechaAsistencia: data.fechaAsistencia,
@@ -192,41 +251,46 @@ export default function FormParteAsistencia({
         observaciones: data.observaciones,
         idTipoLlamado: Number(data.tipoCitacion),
       },
+      moviles: addedMoviles.map((movil) => movil.idMovil),
+      voluntarios: addedVoluntarios.map(
+        (voluntario) => voluntario.idVoluntario
+      ),
     };
     console.log("dataSend", dataSend);
-    // try {
-    //   const response = await fetch(
-    //     `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/guardar`,
-    //     {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //         "ngrok-skip-browser-warning": "true",
-    //       },
-    //       body: JSON.stringify(dataSend),
-    //     }
-    //   );
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/guardar`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify(dataSend),
+        }
+      );
 
-    //   if (response.ok) {
-    //     toast.success(
-    //       params?.folio
-    //         ? "Parte de asistencia actualizado exitosamente"
-    //         : "Parte de asistencia registrado exitosamente"
-    //     );
-    //   } else {
-    //     const errorData = await response.json();
-    //     throw new Error(
-    //       errorData.error || "Error al guardar el parte de asistencia"
-    //     );
-    //   }
-    // } catch (error) {
-    //   console.error("Error al guardar:", error);
-    //   toast.error(
-    //     `Hubo un error al ${
-    //       params?.folio ? "actualizar" : "registrar"
-    //     } el parte de asistencia.`
-    //   );
-    // }
+      if (response.ok) {
+        router.push("/parte-asistencia");
+        toast.success(
+          params?.folio
+            ? "Parte de asistencia actualizado exitosamente"
+            : "Parte de asistencia registrado exitosamente"
+        );
+      } else {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Error al guardar el parte de asistencia"
+        );
+      }
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      toast.error(
+        `Hubo un error al ${
+          params?.folio ? "actualizar" : "registrar"
+        } el parte de asistencia.`
+      );
+    }
   };
 
   if (loading) {
@@ -338,7 +402,7 @@ export default function FormParteAsistencia({
                   <SelectValue placeholder="Oficial a cargo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {voluntarios.map((oficialCargo) => (
+                  {oficialDeCompania.map((oficialCargo) => (
                     <SelectItem
                       key={oficialCargo.idVoluntario}
                       value={oficialCargo.idVoluntario.toString()}
@@ -367,7 +431,7 @@ export default function FormParteAsistencia({
                   <SelectValue placeholder="Oficial Compania" />
                 </SelectTrigger>
                 <SelectContent>
-                  {voluntarios.map((oficialCompania) => (
+                  {oficialDeCompania.map((oficialCompania) => (
                     <SelectItem
                       key={oficialCompania.idVoluntario}
                       value={oficialCompania.idVoluntario.toString()}
@@ -401,14 +465,13 @@ export default function FormParteAsistencia({
                     onValueChange={(value) => {
                       setValue("movil", value);
                       clearErrors("movil");
+                      handleAddMovil(value);
                     }}
                     value={watch("movil")}
-                    {...register("movil", { required: true })}
+                
                   >
                     <SelectTrigger
-                      className={`w-full ${
-                        errors.movil ? "border-red-500" : ""
-                      }`}
+                      className={`w-full `}
                     >
                       <SelectValue placeholder="Moviles" />
                     </SelectTrigger>
@@ -428,64 +491,104 @@ export default function FormParteAsistencia({
                   <h4 className="text-md font-semibold mb-2">
                     Móviles Agregados:
                   </h4>
-                  <ul className="list-disc pl-5">
+                  <ul className="list-none">
                     {addedMoviles.map((movil) => (
-                      <li key={movil.idMovil}>
-                        {movil.nomenclatura} - {movil.especialidad}
+                      <li
+                        key={movil.idMovil}
+                        className="flex items-center gap-4 py-1"
+                      >
+                        <div>
+                          {movil.nomenclatura} - {movil.especialidad}
+                        </div>
+                        <div>
+                          <Button
+                            onClick={() => {
+                              setMoviles((prev) => [...prev, movil]);
+                              setAddedMoviles((prev) =>
+                                prev.filter(
+                                  (movilAdded) =>
+                                    movilAdded.idMovil !== movil.idMovil
+                                )
+                              );
+                            }}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>
                 </div>
               </div>
 
-              {/* <div className="flex flex-col space-y-4 mt-6">
-              <h3 className="text-lg font-semibold">
-                Agregar Voluntarios al Parte de Asistencia
-              </h3>
-              <div className="flex space-x-2">
-                <Controller
-                  name="voluntario"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccione un Voluntario" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {voluntariosDisponibles.map((voluntario) => (
-                          <SelectItem
-                            key={voluntario.idVoluntario}
-                            value={voluntario.idVoluntario.toString()}
+              <div className="flex flex-col space-y-4 mt-6">
+                <h3 className="text-lg font-semibold">
+                  Agregar Voluntarios al Parte de Asistencia
+                </h3>
+                <div className="flex space-x-2">
+                  <Select
+                    onValueChange={(value) => {
+                      setValue("voluntario", value);
+                      clearErrors("voluntario");
+                      handleAddVoluntario(value);
+                    }}
+                    value={watch("voluntario")}
+                   
+                  >
+                    <SelectTrigger
+                      className={`w-full `}
+                    >
+                      <SelectValue placeholder="Voluntarios" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voluntariosDisponibles.map((voluntario) => (
+                        <SelectItem
+                          key={voluntario.idVoluntario}
+                          value={voluntario.idVoluntario.toString()}
+                        >
+                          {voluntario.claveRadial} - {voluntario.nombreVol}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="mt-4">
+                  <h4 className="text-md font-semibold mb-2">
+                    Voluntarios Agregados:
+                  </h4>
+                  <ul className="list-none">
+                    {addedVoluntarios.map((voluntario) => (
+                      <li
+                        key={voluntario.idVoluntario}
+                        className="flex items-center gap-4 py-1"
+                      >
+                        <div>
+                          {voluntario.claveRadial} - {voluntario.nombreVol}
+                        </div>
+                        <div>
+                          <Button
+                            onClick={() => {
+                              setVoluntariosDisponibles((prev) => [
+                                ...prev,
+                                voluntario,
+                              ]);
+                              setAddedVoluntarios((prev) =>
+                                prev.filter(
+                                  (voluntarioAdded) =>
+                                    voluntarioAdded.idVoluntario !==
+                                    voluntario.idVoluntario
+                                )
+                              );
+                            }}
                           >
-                            {voluntario.claveRadial} - {voluntario.nombreVol}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <Button
-                  onClick={() => {
-                    const voluntarioValue = watch("voluntario");
-                    if (voluntarioValue) handleAddVoluntario(voluntarioValue);
-                  }}
-                >
-                  Agregar Voluntario
-                </Button>
+                            Eliminar
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <div className="mt-4">
-                <h4 className="text-md font-semibold mb-2">
-                  Voluntarios Agregados:
-                </h4>
-                <ul className="list-disc pl-5">
-                  {addedVoluntarios.map((voluntario) => (
-                    <li key={voluntario.idVoluntario}>
-                      {voluntario.claveRadial} - {voluntario.nombreVol}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div> */}
 
               <Button type="submit" className="mt-4">
                 Guardar Parte de Asistencia

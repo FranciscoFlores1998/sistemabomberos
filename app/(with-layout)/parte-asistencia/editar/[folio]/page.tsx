@@ -1,4 +1,5 @@
-import TwoStepAttendanceForm from "@/components/dos-pasos-parte-asistencia"
+
+import FormParteAsistencia from "@/components/form-parte-asistencia"
 
 export default async function Page({
     params,
@@ -6,5 +7,5 @@ export default async function Page({
     params: Promise<{ folio: string }>
   }) {
     const folio = (await params).folio
-    return <TwoStepAttendanceForm params={{ folio }} />
+    return <FormParteAsistencia params={{ folio }} />
   }
