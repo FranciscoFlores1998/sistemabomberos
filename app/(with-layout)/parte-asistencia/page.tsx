@@ -1,6 +1,16 @@
 "use client";
 
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus } from 'lucide-react';
+import { ArrowUpDown } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -39,7 +50,7 @@ interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
 }
-
+type SortColumn = "folioPAsistencia" | "fechaAsistencia";
 export default function ParteAsistencia() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,6 +60,11 @@ export default function ParteAsistencia() {
   const [error, setError] = useState<string | null>(null);
   const [tipoLlamado, setTipoLlamado] = useState<TipoCitacion[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<
+    "folioPAsistencia" | "fechaAsistencia"
+  >("folioPAsistencia");
+
   useEffect(() => {
     fetchAllPartes();
     fetchTipoLlamado();
@@ -59,13 +75,16 @@ export default function ParteAsistencia() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch partes de asistencia data");
       }
@@ -82,13 +101,16 @@ export default function ParteAsistencia() {
 
   const fetchTipoLlamado = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch tipo llamado data");
       }
@@ -100,13 +122,16 @@ export default function ParteAsistencia() {
   };
   const fetchVoluntario = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch voluntarios");
       }
@@ -117,13 +142,33 @@ export default function ParteAsistencia() {
     }
   };
 
+  const toggleSorting = (column: SortColumn) => {
+    const newSortOrder =
+      column === sortColumn && sortOrder === "asc" ? "desc" : "asc";
+    setSortOrder(newSortOrder);
+    setSortColumn(column);
+    const sorted = [...filteredPartes].sort((a, b) => {
+      if (column === "folioPAsistencia") {
+        return newSortOrder === "asc"
+          ? a.folioPAsistencia - b.folioPAsistencia
+          : b.folioPAsistencia - a.folioPAsistencia;
+      } else {
+        return newSortOrder === "asc"
+          ? new Date(a.fechaAsistencia).getTime() -
+              new Date(b.fechaAsistencia).getTime()
+          : new Date(b.fechaAsistencia).getTime() -
+              new Date(a.fechaAsistencia).getTime();
+      }
+    });
+    setFilteredPartes(sorted);
+  };
+
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const filtered = allPartes.filter(
-      (parte) => {
-      const tipoLlamadoNombre = tipoLlamado.find(
-        (tipo) => tipo.idTipoLlamado === parte.idTipoLlamado
-      )?.nombreTipoLlamado.toLowerCase();
+    const filtered = allPartes.filter((parte) => {
+      const tipoLlamadoNombre = tipoLlamado
+        .find((tipo) => tipo.idTipoLlamado === parte.idTipoLlamado)
+        ?.nombreTipoLlamado.toLowerCase();
       return (
         // parte.aCargoDelCuerpo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         // parte.aCargoDeLaCompania.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,27 +186,33 @@ export default function ParteAsistencia() {
 
   const handleDeleteParte = async (folio: number) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/eliminar/${folio}`, {
-        method: 'DELETE',
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/eliminar/${folio}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
       if (!response.ok) {
-        throw new Error('Failed to delete parte de asistencia');
+        throw new Error("Failed to delete parte de asistencia");
       }
-      setAllPartes(prev => prev.filter(p => p.folioPAsistencia !== folio));
-      setFilteredPartes(prev => prev.filter(p => p.folioPAsistencia !== folio));
+      setAllPartes((prev) => prev.filter((p) => p.folioPAsistencia !== folio));
+      setFilteredPartes((prev) =>
+        prev.filter((p) => p.folioPAsistencia !== folio)
+      );
       toast({
         title: "Éxito",
         description: "Parte de asistencia eliminado correctamente.",
       });
     } catch (error) {
-      console.error('Error deleting parte de asistencia:', error);
+      console.error("Error deleting parte de asistencia:", error);
       toast({
         title: "Error",
-        description: "Error al eliminar el parte de asistencia. Por favor, inténtelo de nuevo.",
+        description:
+          "Error al eliminar el parte de asistencia. Por favor, inténtelo de nuevo.",
         variant: "destructive",
       });
     }
@@ -178,7 +229,10 @@ export default function ParteAsistencia() {
           </Button>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="flex items-center space-x-2 mb-6">
+          <form
+            onSubmit={handleSearch}
+            className="flex items-center space-x-2 mb-6"
+          >
             <div className="relative flex-grow">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -194,23 +248,43 @@ export default function ParteAsistencia() {
             </Button>
           </form>
 
-          {error && (
-            <p className="text-red-500 mb-4">{error}</p>
-          )}
+          {error && <p className="text-red-500 mb-4">{error}</p>}
 
           {loading ? (
-            <p className="text-center">Cargando datos de partes de asistencia...</p>
+            <p className="text-center">
+              Cargando datos de partes de asistencia...
+            </p>
           ) : (
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <Table>
                 <TableCaption>Lista de partes de asistencia</TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Folio</TableHead>
+                    <TableHead>
+                      {" "}
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSorting("folioPAsistencia")}
+                        className="hover:bg-transparent"
+                      >
+                        Folio
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
                     <TableHead>Tipo de Llamado</TableHead>
                     <TableHead>A Cargo del Cuerpo</TableHead>
                     <TableHead>A Cargo de la Compañía</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>
+                      {" "}
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSorting("fechaAsistencia")}
+                        className="hover:bg-transparent"
+                      >
+                        Fecha
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
                     <TableHead>Hora Inicio</TableHead>
                     <TableHead>Hora Fin</TableHead>
                     <TableHead>Dirección</TableHead>
@@ -223,10 +297,29 @@ export default function ParteAsistencia() {
                     <TableRow key={parte.folioPAsistencia}>
                       <TableCell>{parte.folioPAsistencia}</TableCell>
                       <TableCell>
-                        {tipoLlamado.find(llamado => llamado.idTipoLlamado === parte.idTipoLlamado)?.nombreTipoLlamado || 'N/A'}
+                        {tipoLlamado.find(
+                          (llamado) =>
+                            llamado.idTipoLlamado === parte.idTipoLlamado
+                        )?.nombreTipoLlamado || "N/A"}
                       </TableCell>
-                      <TableCell>{voluntarios.find(oCuerpo => oCuerpo.idVoluntario === parseInt(parte.aCargoDelCuerpo))?.nombreVol}</TableCell>
-                      <TableCell>{voluntarios.find(oCompania => oCompania.idVoluntario === parseInt(parte.aCargoDeLaCompania))?.nombreVol}</TableCell>
+                      <TableCell>
+                        {
+                          voluntarios.find(
+                            (oCuerpo) =>
+                              oCuerpo.idVoluntario ===
+                              parseInt(parte.aCargoDelCuerpo)
+                          )?.nombreVol
+                        }
+                      </TableCell>
+                      <TableCell>
+                        {
+                          voluntarios.find(
+                            (oCompania) =>
+                              oCompania.idVoluntario ===
+                              parseInt(parte.aCargoDeLaCompania)
+                          )?.nombreVol
+                        }
+                      </TableCell>
                       <TableCell>{parte.fechaAsistencia}</TableCell>
                       <TableCell>{parte.horaInicio}</TableCell>
                       <TableCell>{parte.horaFin}</TableCell>
@@ -234,12 +327,18 @@ export default function ParteAsistencia() {
                       <TableCell>{parte.totalAsistencia}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Link href={`/parte-asistencia/visualizar/${parte.folioPAsistencia}`} passHref>
+                          <Link
+                            href={`/parte-asistencia/visualizar/${parte.folioPAsistencia}`}
+                            passHref
+                          >
                             <Button variant="outline" size="sm">
                               Visualizar
                             </Button>
                           </Link>
-                          <Link href={`/parte-asistencia/editar/${parte.folioPAsistencia}`} passHref>
+                          <Link
+                            href={`/parte-asistencia/editar/${parte.folioPAsistencia}`}
+                            passHref
+                          >
                             <Button variant="outline" size="sm">
                               Editar
                             </Button>
@@ -252,14 +351,22 @@ export default function ParteAsistencia() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  ¿Estás seguro?
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. Esto eliminará permanentemente el parte de asistencia con folio {parte.folioPAsistencia}.
+                                  Esta acción no se puede deshacer. Esto
+                                  eliminará permanentemente el parte de
+                                  asistencia con folio {parte.folioPAsistencia}.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteParte(parte.folioPAsistencia)}>
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    handleDeleteParte(parte.folioPAsistencia)
+                                  }
+                                >
                                   Eliminar
                                 </AlertDialogAction>
                               </AlertDialogFooter>
