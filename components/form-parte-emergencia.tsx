@@ -272,9 +272,9 @@ export default function FormParteEmergencia({
       setValue("llamarEmpresaQuimica", data.llamarEmpresaQuimica);
       setValue("descripcionMaterialP", data.descripcionMaterialP);
       setValue("direccionEmergencia", data.direccionEmergencia);
-      setValue("idOficial", data.idOficial.toString());
-      setValue("idClaveEmergencia", data.idClaveEmergencia.toString());
-      setValue("folioPAsistencia", data.folioPAsistencia.toString());
+      setValue("idOficial", data.idOficial);
+      setValue("idClaveEmergencia", data.idClaveEmergencia);
+      setValue("folioPAsistencia", data.folioPAsistencia);
       setDate(new Date(data.fechaEmergencia));
       setValue("fechaEmergencia", formatearFecha(data.fechaEmergencia));
 

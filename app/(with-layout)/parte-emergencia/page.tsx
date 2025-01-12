@@ -26,8 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus } from "lucide-react";
-
+import { Search, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 interface ParteEmergencia {
   folioPEmergencia: number;
   horaInicio: string;
@@ -42,18 +42,34 @@ interface ParteEmergencia {
   idClaveEmergencia: number;
   nombreClaveEmergencia?: string;
 }
-
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+}
+interface ClaveEmergencia {
+  idClaveEmergencia: number;
+  nombreClaveEmergencia: string;
+}
 export default function ParteEmergencia() {
-  const [parteEmergenciaOptions, setParteEmergenciaOptions] = useState<
-    ParteEmergencia[]
-  >([]);
   const router = useRouter();
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const [allPartes, setAllPartes] = useState<ParteEmergencia[]>([]);
+  const [filteredPartes, setFilteredPartes] = useState<ParteEmergencia[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [claveEmergencia, setClavesEmergencia] = useState<ClaveEmergencia[]>(
+    []
+  );
   useEffect(() => {
-    obtenerParteEmergencia();
+    fetchAllPartes();
+    fetchClaveEmergencia();
+    fetchVoluntario();
   }, []);
 
-  const obtenerParteEmergencia = async () => {
+  const fetchAllPartes = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/obtener`,
@@ -65,43 +81,24 @@ export default function ParteEmergencia() {
           },
         }
       );
-
-      if (response.ok) {
-        const data: ParteEmergencia[] = await response.json();
-
-        // Fetch the name for each emergency key
-        const partesConNombres = await Promise.all(
-          data.map(async (parte) => {
-            const nombreClave = await obtenerNombreClaveEmergencia(
-              parte.idClaveEmergencia
-            );
-            return { ...parte, nombreClaveEmergencia: nombreClave };
-          })
-        );
-
-        setParteEmergenciaOptions(partesConNombres);
-      } else {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || "Hubo un error al obtener el parte de emergencia."
-        );
+      if (!response.ok) {
+        throw new Error("Failed to fetch partes de emergencia data");
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Hubo un error al obtener el parte de emergencia.",
-        variant: "destructive",
-      });
+      const data = await response.json();
+      setAllPartes(data);
+      setFilteredPartes(data);
+    } catch (err) {
+      setError("Error fetching partes de emergencia data. Please try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const obtenerNombreClaveEmergencia = async (id: number): Promise<string> => {
+  const fetchClaveEmergencia = async () => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/claveEmergencia/buscar/${id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/claveEmergencia/obtener`,
         {
           method: "GET",
           headers: {
@@ -110,29 +107,59 @@ export default function ParteEmergencia() {
           },
         }
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.nombreClaveEmergencia;
-      } else {
-        throw new Error(
-          "No se pudo obtener el nombre de la clave de emergencia"
-        );
+      if (!response.ok) {
+        throw new Error("Failed to fetch tipo llamado data");
       }
+      const data = await response.json();
+      setClavesEmergencia(data);
     } catch (error) {
-      console.error(
-        "Error al obtener el nombre de la clave de emergencia:",
-        error
-      );
-      return "Desconocido";
+      console.error("Error fetching tipo llamado:", error);
     }
+  };
+
+  const fetchVoluntario = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch voluntarios");
+      }
+      const data = await response.json();
+      setVoluntarios(data);
+    } catch (error) {
+      console.error("Error fetching voluntarios:", error);
+    }
+  };
+
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const filtered = allPartes.filter((parte) => {
+      const claveEmergencia = claveEmergencia
+        .find((tipo) => tipo.nombreClave === parte.nombreClave)
+        ?.nombreTipoLlamado.toLowerCase();
+      return (
+        // parte.aCargoDelCuerpo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // parte.aCargoDeLaCompania.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        parte.folioPEmergencia.toString().includes(searchTerm) ||
+        (claveEmergencia && claveEmergencia.includes(searchTerm.toLowerCase()))
+      );
+    });
+    setFilteredPartes(filtered);
   };
 
   const handleCrearParte = () => {
     router.push("/parte-emergencia/crear");
   };
 
-  const handleDeleteParteEmergencia = async (folio: number) => {
+  const handleDeleteParte = async (folio: number) => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/eliminar/${folio}`,
@@ -147,7 +174,8 @@ export default function ParteEmergencia() {
       if (!response.ok) {
         throw new Error("Failed to delete parte de emergencia");
       }
-      setParteEmergenciaOptions((prev) =>
+      setAllPartes((prev) => prev.filter((p) => p.folioPEmergencia !== folio));
+      setFilteredPartes((prev) =>
         prev.filter((p) => p.folioPEmergencia !== folio)
       );
       toast({
@@ -164,116 +192,156 @@ export default function ParteEmergencia() {
       });
     }
   };
-
   return (
     <div className="container mx-auto py-10">
-        <Card className="w-full max-w-7xl mx-auto mb-6">
-          <CardHeader className=" flex flex-row items-center justify-between">
-            <CardTitle>Gestión de Partes de Asistencia</CardTitle>
-            <Button
-              onClick={handleCrearParte}
-            ><Plus className="mr-2 h-4 w-4" />
-              Crear Parte
+      <Card className="w-full max-w-7xl mx-auto mb-6">
+        <CardHeader className=" flex flex-row items-center justify-between">
+          <CardTitle>Gestión de Partes de Emergencia</CardTitle>
+          <Button onClick={handleCrearParte}>
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Parte de Emergencia
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={handleSearch}
+            className="flex items-center space-x-2 mb-6"
+          >
+            <div className="relative flex-grow">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar por folio o clave de emergencia"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Buscando..." : "Buscar"}
             </Button>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableCaption>Lista de partes de emergencia</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Folio</TableHead>
-                  <TableHead>Hora Inicio</TableHead>
-                  <TableHead>Hora Fin</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Pre-Informe</TableHead>
-                  <TableHead>Llamar Empresa Química</TableHead>
-                  <TableHead>Descripción Material Peligroso</TableHead>
-                  <TableHead>Folio P. Asistencia</TableHead>
-                  <TableHead>Dirección Emergencia</TableHead>
-                  <TableHead>ID Oficial</TableHead>
-                  <TableHead>Clave Emergencia</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {parteEmergenciaOptions.map((parte) => (
-                  <TableRow key={parte.folioPEmergencia}>
-                    <TableCell>{parte.folioPEmergencia}</TableCell>
-                    <TableCell>{parte.horaInicio}</TableCell>
-                    <TableCell>{parte.horaFin}</TableCell>
-                    <TableCell>{parte.fechaEmergencia}</TableCell>
-                    <TableCell>{parte.preInforme}</TableCell>
-                    <TableCell>
-                      {parte.llamarEmpresaQuimica === null
-                        ? "N/A"
-                        : parte.llamarEmpresaQuimica
-                        ? "Sí"
-                        : "No"}
-                    </TableCell>
-                    <TableCell>{parte.descripcionMaterialP}</TableCell>
-                    <TableCell>{parte.folioPAsistencia || "N/A"}</TableCell>
-                    <TableCell>{parte.direccionEmergencia}</TableCell>
-                    <TableCell>{parte.idOficial}</TableCell>
-                    <TableCell>
-                      {parte.nombreClaveEmergencia || "Desconocido"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/parte-emergencia/ver/${parte.folioPEmergencia}`}
-                          passHref
-                        >
-                          <Button variant="outline" size="sm">
-                            Ver
-                          </Button>
-                        </Link>
-                        <Link
-                          href={`/parte-emergencia/editar/${parte.folioPEmergencia}`}
-                          passHref
-                        >
-                          <Button variant="outline" size="sm">
-                            Editar
-                          </Button>
-                        </Link>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              Eliminar
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                ¿Estás seguro?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción no se puede deshacer. Esto eliminará
-                                permanentemente el parte de emergencia con folio{" "}
-                                {parte.folioPEmergencia}.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() =>
-                                  handleDeleteParteEmergencia(
-                                    parte.folioPEmergencia
-                                  )
-                                }
-                              >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+          </form>
+
+          {error && <p className="text-red-500 mb-4">{error}</p>}
+
+          {loading ? (
+            <p className="text-center">
+              Cargando datos de partes de asistencia...
+            </p>
+          ) : (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <Table>
+                <TableCaption>Lista de partes de emergencia</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Folio</TableHead>
+                    <TableHead>Clave Emergencia</TableHead>
+                    <TableHead>Pre-Informe</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Llamar Empresa Química</TableHead>
+                    <TableHead>Descripción Material Peligroso</TableHead>
+                    <TableHead>Dirección Emergencia</TableHead>
+                    <TableHead>Oficial</TableHead>
+                    <TableHead>Hora Inicio</TableHead>
+                    <TableHead>Hora Fin</TableHead>
+                    <TableHead>Folio P. Asistencia</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {filteredPartes.map((parte) => (
+                    <TableRow key={parte.folioPEmergencia}>
+                      <TableCell>{parte.folioPEmergencia}</TableCell>
+                      <TableCell>
+                        {
+                          claveEmergencia.find(
+                            (oCuerpo) =>
+                              oCuerpo.idClaveEmergencia ===
+                              parseInt(parte.idClaveEmergencia.toString())
+                          )?.nombreClaveEmergencia
+                        }
+                      </TableCell>
+                      <TableCell>{parte.preInforme}</TableCell>
+                      <TableCell>{parte.fechaEmergencia}</TableCell>
+                      <TableCell>
+                        {parte.llamarEmpresaQuimica === null
+                          ? "N/A"
+                          : parte.llamarEmpresaQuimica
+                          ? "Sí"
+                          : "No"}
+                      </TableCell>
+                      <TableCell>{parte.descripcionMaterialP}</TableCell>
+                      
+                      <TableCell>{parte.direccionEmergencia}</TableCell>
+                      <TableCell>
+                        {
+                          voluntarios.find(
+                            (oCuerpo) =>
+                              oCuerpo.idVoluntario ===
+                              parseInt(parte.idOficial.toString())
+                          )?.nombreVol
+                        }
+                      </TableCell>
+                      <TableCell>{parte.horaInicio}</TableCell>
+                      <TableCell>{parte.horaFin}</TableCell>
+                      <TableCell>{parte.folioPAsistencia || "N/A"}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Link
+                            href={`/parte-emergencia/ver/${parte.folioPEmergencia}`}
+                            passHref
+                          >
+                            <Button variant="outline" size="sm">
+                              Ver
+                            </Button>
+                          </Link>
+                          <Link
+                            href={`/parte-emergencia/editar/${parte.folioPEmergencia}`}
+                            passHref
+                          >
+                            <Button variant="outline" size="sm">
+                              Editar
+                            </Button>
+                          </Link>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                Eliminar
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  ¿Estás seguro?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta acción no se puede deshacer. Esto
+                                  eliminará permanentemente el parte de
+                                  emergencia con folio {parte.folioPEmergencia}.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    handleDeleteParte(parte.folioPEmergencia)
+                                  }
+                                >
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
