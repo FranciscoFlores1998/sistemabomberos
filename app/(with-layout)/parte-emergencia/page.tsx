@@ -4,6 +4,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowUpDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -50,6 +51,7 @@ interface ClaveEmergencia {
   idClaveEmergencia: number;
   nombreClaveEmergencia: string;
 }
+type SortColumn = "folioPEmergencia" | "fechaEmergencia" | "idClaveEmergencia";
 export default function ParteEmergencia() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,6 +63,8 @@ export default function ParteEmergencia() {
   const [claveEmergencia, setClavesEmergencia] = useState<ClaveEmergencia[]>(
     []
   );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<SortColumn>("folioPEmergencia");
   useEffect(() => {
     fetchAllPartes();
     fetchClaveEmergencia();
@@ -154,7 +158,31 @@ export default function ParteEmergencia() {
     });
     setFilteredPartes(filtered);
   };
-
+  const toggleSorting = (column: SortColumn) => {
+    const newSortOrder =
+      column === sortColumn && sortOrder === "asc" ? "desc" : "asc";
+    setSortOrder(newSortOrder);
+    setSortColumn(column);
+    const sorted = [...filteredPartes].sort((a, b) => {
+      if (column === "folioPEmergencia") {
+        return newSortOrder === "asc"
+          ? a.folioPEmergencia - b.folioPEmergencia
+          : b.folioPEmergencia - a.folioPEmergencia;
+      } else if (column === "fechaEmergencia") {
+        return newSortOrder === "asc"
+          ? new Date(a.fechaEmergencia).getTime() -
+              new Date(b.fechaEmergencia).getTime()
+          : new Date(b.fechaEmergencia).getTime() -
+              new Date(a.fechaEmergencia).getTime();
+      } else {
+        // For idClaveEmergencia
+        return newSortOrder === "asc"
+          ? a.idClaveEmergencia - b.idClaveEmergencia
+          : b.idClaveEmergencia - a.idClaveEmergencia;
+      }
+    });
+    setFilteredPartes(sorted);
+  };
   const handleCrearParte = () => {
     router.push("/parte-emergencia/crear");
   };
@@ -194,7 +222,7 @@ export default function ParteEmergencia() {
   };
   return (
     <div className="container mx-auto py-10">
-      <Card className="w-full max-w-7xl mx-auto mb-6">
+      <Card className="w-full max-w-8xl mx-auto mb-6">
         <CardHeader className=" flex flex-row items-center justify-between">
           <CardTitle>Gestión de Partes de Emergencia</CardTitle>
           <Button onClick={handleCrearParte}>
@@ -234,12 +262,36 @@ export default function ParteEmergencia() {
                 <TableCaption>Lista de partes de emergencia</TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Folio</TableHead>
-                    <TableHead>Clave Emergencia</TableHead>
-                    <TableHead>Pre-Informe</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Llamar Empresa Química</TableHead>
-                    <TableHead>Descripción Material Peligroso</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSorting("folioPEmergencia")}
+                        className="hover:bg-transparent"
+                      >
+                        Folio
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSorting("idClaveEmergencia")}
+                        className="hover:bg-transparent"
+                      >
+                        Clave Emergencia
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSorting("fechaEmergencia")}
+                        className="hover:bg-transparent"
+                      >
+                        Fecha
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
                     <TableHead>Dirección Emergencia</TableHead>
                     <TableHead>Oficial</TableHead>
                     <TableHead>Hora Inicio</TableHead>
@@ -261,17 +313,7 @@ export default function ParteEmergencia() {
                           )?.nombreClaveEmergencia
                         }
                       </TableCell>
-                      <TableCell>{parte.preInforme}</TableCell>
                       <TableCell>{parte.fechaEmergencia}</TableCell>
-                      <TableCell>
-                        {parte.llamarEmpresaQuimica === null
-                          ? "N/A"
-                          : parte.llamarEmpresaQuimica
-                          ? "Sí"
-                          : "No"}
-                      </TableCell>
-                      <TableCell>{parte.descripcionMaterialP}</TableCell>
-                      
                       <TableCell>{parte.direccionEmergencia}</TableCell>
                       <TableCell>
                         {

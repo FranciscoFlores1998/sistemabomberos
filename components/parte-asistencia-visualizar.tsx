@@ -95,11 +95,19 @@ export default function VisualizarParteAsistencia({
     const element = document.getElementById('pdf-content');
     if (!element) return;
 
+    // Aplicar estilos específicos para PDF antes de generar
+    element.classList.add('pdf-mode');
+
     const canvas = await html2canvas(element, {
       scale: 2,
       logging: false,
-      useCORS: true
+      useCORS: true,
+      backgroundColor: '#ffffff', // Asegura un fondo blanco
     });
+
+    // Remover estilos específicos para PDF después de generar
+    element.classList.remove('pdf-mode');
+
     const imgData = canvas.toDataURL('image/png');
 
     const pdf = new jsPDF({
@@ -114,7 +122,7 @@ export default function VisualizarParteAsistencia({
     const imgHeight = canvas.height;
     const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
     const imgX = (pdfWidth - imgWidth * ratio) / 2;
-    const imgY = 30;
+    const imgY = 10; // Ajustado para dar un poco más de margen superior
 
     pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
     pdf.save(`parte-asistencia-${folio}.pdf`);
@@ -130,14 +138,49 @@ export default function VisualizarParteAsistencia({
 
   return (
     <div className="container mx-auto py-10">
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #pdf-content, #pdf-content * {
+            visibility: visible;
+          }
+          #pdf-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+        }
+        .pdf-mode {
+          background-color: white;
+          color: black;
+          font-size: 12px;
+        }
+        .pdf-mode h3 {
+          color: #1a202c;
+          font-size: 16px;
+          margin-bottom: 8px;
+        }
+        .pdf-mode p {
+          margin-bottom: 8px;
+        }
+        .pdf-mode .grid {
+          display: block;
+        }
+        .pdf-mode .grid > div {
+          margin-bottom: 16px;
+        }
+      `}</style>
       <Card className="w-full max-w-3xl mx-auto">
-        <div id="pdf-content">
-          <CardHeader>
-            <CardTitle>Parte de Asistencia número {folio}</CardTitle>
+        <div id="pdf-content" className="p-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl font-bold text-center">Parte de Asistencia número {folio}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-lg font-semibold">Tipo de Citación</h3>
                   <p>{parteAsistencia.tipoLlamado.nombreTipoLlamado}</p>
@@ -157,9 +200,7 @@ export default function VisualizarParteAsistencia({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold">
-                    Oficial a cargo del cuerpo
-                  </h3>
+                  <h3 className="text-lg font-semibold">Oficial a cargo del cuerpo</h3>
                   <p>
                     {parteAsistencia.encargadoCuerpo.claveRadial}{" "}
                     {parteAsistencia.encargadoCuerpo.nombreVol}{" "}
@@ -223,7 +264,7 @@ export default function VisualizarParteAsistencia({
             </div>
           </CardContent>
         </div>
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between mt-4">
           <Button variant="outline" onClick={() => router.back()}>
             Volver
           </Button>
