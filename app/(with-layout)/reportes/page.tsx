@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts'
+import { DatePickerWithRange } from "@/components/ui/date-picker-with-range"
+import { addDays } from "date-fns"
 
 interface SummaryStats {
   totalAsistencias: number;
@@ -64,6 +66,8 @@ export default function ReportesPage() {
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [fromDate, setFromDate] = useState<Date | undefined>(addDays(new Date(), -30))
+  const [toDate, setToDate] = useState<Date | undefined>(new Date())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -140,10 +144,20 @@ export default function ReportesPage() {
     fetchData()
   }, [])
 
+  const filterDataByDateRange = (data: ParteAsistencia[] | ParteEmergencia[], dateField: 'fechaAsistencia' | 'fechaEmergencia') => {
+    return data.filter(item => {
+      const itemDate = new Date(item[dateField]);
+      return (!fromDate || itemDate >= fromDate) && (!toDate || itemDate <= toDate);
+    });
+  }
+
+  const filteredPartesAsistencia = filterDataByDateRange(partesAsistencia, 'fechaAsistencia');
+  const filteredPartesEmergencia = filterDataByDateRange(partesEmergencia, 'fechaEmergencia');
+
   if (loading) return <p>Cargando datos...</p>
   if (error) return <p className="text-red-500">{error}</p>
 
-  const asistenciaChartData = partesAsistencia
+  const asistenciaChartData = filteredPartesAsistencia
     .filter(parte => parte.fechaAsistencia && parte.totalAsistencia !== undefined)
     .sort((a, b) => new Date(a.fechaAsistencia).getTime() - new Date(b.fechaAsistencia).getTime())
     .slice(-10)
@@ -152,7 +166,7 @@ export default function ReportesPage() {
       asistencia: parte.totalAsistencia
     }))
 
-  const emergenciasPorClave = partesEmergencia.reduce((acc, parte) => {
+  const emergenciasPorClave = filteredPartesEmergencia.reduce((acc, parte) => {
     if (parte && parte.idClaveEmergencia) {
       acc[parte.idClaveEmergencia] = (acc[parte.idClaveEmergencia] || 0) + 1
     }
@@ -181,13 +195,22 @@ export default function ReportesPage() {
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Panel de Reportes Unificado</h1>
       
+      <div className="mb-6">
+        <DatePickerWithRange
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromChange={setFromDate}
+          onToChange={setToDate}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardHeader>
             <CardTitle>Total Asistencias</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{summaryStats.totalAsistencias}</p>
+            <p className="text-2xl font-bold">{filteredPartesAsistencia.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -195,7 +218,7 @@ export default function ReportesPage() {
             <CardTitle>Total Emergencias</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{summaryStats.totalEmergencias}</p>
+            <p className="text-2xl font-bold">{filteredPartesEmergencia.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -215,7 +238,11 @@ export default function ReportesPage() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={[summaryStats]}>
+            <BarChart data={[{
+              totalAsistencias: filteredPartesAsistencia.length,
+              totalEmergencias: filteredPartesEmergencia.length,
+              totalVoluntarios: summaryStats.totalVoluntarios
+            }]}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
@@ -224,7 +251,6 @@ export default function ReportesPage() {
               <Bar dataKey="totalAsistencias" name="Asistencias" fill="#8884d8" />
               <Bar dataKey="totalEmergencias" name="Emergencias" fill="#82ca9d" />
               <Bar dataKey="totalVoluntarios" name="Voluntarios" fill="#ffc658" />
-              <Bar dataKey="totalCitaciones" name="Citaciones" fill="#ff8042" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
