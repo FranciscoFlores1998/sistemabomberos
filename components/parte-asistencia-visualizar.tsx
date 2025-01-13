@@ -70,6 +70,7 @@ export default function VisualizarParteAsistencia({
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/buscar/${folio}`,
           {
+            method: "GET",
             headers: {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
@@ -78,6 +79,7 @@ export default function VisualizarParteAsistencia({
         );
         if (response.ok) {
           const data = await response.json();
+          console.log("mostrar", data);
           setParteAsistencia(data);
         } else {
           console.error("Error fetching data:", response.statusText);
