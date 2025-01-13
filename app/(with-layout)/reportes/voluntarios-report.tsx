@@ -1,9 +1,23 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 
 interface Voluntario {
   idVoluntario: number;
@@ -24,68 +38,64 @@ interface VoluntariosReportProps {
 }
 
 export function VoluntariosReport({ onDataLoad }: VoluntariosReportProps) {
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([])
-  const [cargos, setCargos] = useState<Cargo[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [voluntariosResponse, cargosResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
+        const voluntariosResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`,
+          {
             headers: {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
             },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/cargo/obtener`, {
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          })
-        ])
+          }
+        );
 
-        if (!voluntariosResponse.ok || !cargosResponse.ok) {
-          throw new Error('Failed to fetch data')
+        if (voluntariosResponse.ok) {
+          throw new Error("Failed to fetch data");
         }
 
-        const voluntariosData = await voluntariosResponse.json()
-        const cargosData = await cargosResponse.json()
+        const voluntariosData = await voluntariosResponse.json();
 
-        const parsedVoluntariosData = Array.isArray(voluntariosData) ? voluntariosData : []
-        const parsedCargosData = Array.isArray(cargosData) ? cargosData : []
+        const parsedVoluntariosData = Array.isArray(voluntariosData)
+          ? voluntariosData
+          : [];
 
-        setVoluntarios(parsedVoluntariosData)
-        setCargos(parsedCargosData)
-        
+        setVoluntarios(parsedVoluntariosData);
+
         // Send total to parent
-        onDataLoad(parsedVoluntariosData.length)
+        onDataLoad(parsedVoluntariosData.length);
       } catch (err) {
-        setError('Error fetching data')
-        console.error(err)
+        setError("Error fetching data");
+        console.error(err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [onDataLoad])
+    fetchData();
+  }, [onDataLoad]);
 
-  if (loading) return <p>Cargando datos de voluntarios...</p>
-  if (error) return <p className="text-red-500">{error}</p>
+  if (loading) return <p>Cargando datos de voluntarios...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
 
   const voluntariosPorCompania = voluntarios.reduce((acc, voluntario) => {
-    const compania = voluntario.idCompania || 'Sin Compañía'
-    acc[compania] = (acc[compania] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+    const compania = voluntario.idCompania || "Sin Compañía";
+    acc[compania] = (acc[compania] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
-  const chartData = Object.entries(voluntariosPorCompania).map(([compania, cantidad]) => ({
-    compania: `Compañía ${compania}`,
-    cantidad
-  }))
+  const chartData = Object.entries(voluntariosPorCompania).map(
+    ([compania, cantidad]) => ({
+      compania: `Compañía ${compania}`,
+      cantidad,
+    })
+  );
 
   return (
     <div className="space-y-4">
@@ -133,7 +143,8 @@ export function VoluntariosReport({ onDataLoad }: VoluntariosReportProps) {
               <TableCell>{voluntario.rutVoluntario}</TableCell>
               <TableCell>{voluntario.claveRadial}</TableCell>
               <TableCell>
-                {cargos.find(cargo => cargo.idCargo === voluntario.idCargo)?.nombreCargo || 'Sin Cargo'}
+                {cargos.find((cargo) => cargo.idCargo === voluntario.idCargo)
+                  ?.nombreCargo || "Sin Cargo"}
               </TableCell>
               <TableCell>Compañía {voluntario.idCompania}</TableCell>
             </TableRow>
@@ -141,6 +152,5 @@ export function VoluntariosReport({ onDataLoad }: VoluntariosReportProps) {
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
-

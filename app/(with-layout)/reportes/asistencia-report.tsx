@@ -34,6 +34,7 @@ export function AsistenciaReport({ onDataLoad }: AsistenciaReportProps) {
           throw new Error('Failed to fetch attendance reports')
         }
         const data = await response.json()
+        console.log("akiiii")
         const parsedData = Array.isArray(data) ? data : []
         setPartesAsistencia(parsedData)
         
