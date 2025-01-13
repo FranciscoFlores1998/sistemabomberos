@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import FallbackSpinner from "@/components/ui/spinner";
 import { formatearFecha } from "@/lib/formatearFecha";
-import { Download } from 'lucide-react';
+import { Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -50,7 +50,8 @@ export default function VisualizarParteEmergencia({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [parteEmergencia, setParteEmergencia] = useState<ParteEmergenciaResponse | null>(null);
+  const [parteEmergencia, setParteEmergencia] =
+    useState<ParteEmergenciaResponse | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,7 +70,7 @@ export default function VisualizarParteEmergencia({
         if (response.ok) {
           const data = await response.json();
           setParteEmergencia(data);
-         console.log(data)
+          console.log("mostrar", data);
         } else {
           console.error("Error fetching data:", response.statusText);
         }
@@ -84,26 +85,26 @@ export default function VisualizarParteEmergencia({
   }, [folio]);
 
   const generatePDF = async () => {
-    const element = document.getElementById('pdf-content');
+    const element = document.getElementById("pdf-content");
     if (!element) return;
 
-    element.classList.add('pdf-mode');
+    element.classList.add("pdf-mode");
 
     const canvas = await html2canvas(element, {
       scale: 2,
       logging: false,
       useCORS: true,
-      backgroundColor: '#ffffff',
+      backgroundColor: "#ffffff",
     });
 
-    element.classList.remove('pdf-mode');
+    element.classList.remove("pdf-mode");
 
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL("image/png");
 
     const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
     });
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -114,7 +115,14 @@ export default function VisualizarParteEmergencia({
     const imgX = (pdfWidth - imgWidth * ratio) / 2;
     const imgY = 10;
 
-    pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+    pdf.addImage(
+      imgData,
+      "PNG",
+      imgX,
+      imgY,
+      imgWidth * ratio,
+      imgHeight * ratio
+    );
     pdf.save(`parte-emergencia-${folio}.pdf`);
   };
 
@@ -133,7 +141,8 @@ export default function VisualizarParteEmergencia({
           body * {
             visibility: hidden;
           }
-          #pdf-content, #pdf-content * {
+          #pdf-content,
+          #pdf-content * {
             visibility: visible;
           }
           #pdf-content {
@@ -152,33 +161,70 @@ export default function VisualizarParteEmergencia({
           color: #1a202c;
           font-size: 16px;
           margin-bottom: 8px;
+          padding: 8px;
+          background-color: #f0f0f0;
+          border-bottom: 1px solid #d1d1d1;
         }
         .pdf-mode p {
           margin-bottom: 8px;
+          padding: 8px;
         }
         .pdf-mode .grid {
-          display: block;
+          display: grid;
+          gap: 16px;
         }
+
+        .pdf-mode .grid.two-columns {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .pdf-mode .grid.three-columns {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
         .pdf-mode .grid > div {
-          margin-bottom: 16px;
+          border: 1px solid #d1d1d1;
+          border-radius: 4px;
+          padding: 8px;
+          background-color: #f9f9f9;
+        }
+        .pdf-mode ul {
+          padding-left: 20px;
+        }
+        .pdf-mode li {
+          margin-bottom: 4px;
+        }
+        .pdf-mode .full-width {
+          grid-column: 1 / -1;
         }
       `}</style>
       <Card className="w-full max-w-3xl mx-auto">
         <div id="pdf-content" className="p-6">
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-center">Parte de Emergencia número {folio}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">
+              Parte de Emergencia número {folio}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="full-width grid gap-4 grid-cols-2 pdf-mode grid two-columns">
                 <div>
                   <h3 className="text-lg font-semibold">Clave de Emergencia</h3>
                   <p>{parteEmergencia.claveEmergencia.nombreClaveEmergencia}</p>
                 </div>
                 <div>
+                  <h3 className="text-lg font-semibold">
+                    Folio Parte Asistencia
+                  </h3>
+                  <p>{parteEmergencia.folioPAsistencia}</p>
+                </div>
+              </div>
+              <div className="full-width grid grid-cols-3 gap-4 pdf-mode grid three-columns">
+                <div>
                   <h3 className="text-lg font-semibold">Fecha</h3>
                   <p>{formatearFecha(parteEmergencia.fechaEmergencia)}</p>
                 </div>
+
                 <div>
                   <h3 className="text-lg font-semibold">Hora de Inicio</h3>
                   <p>{parteEmergencia.horaInicio}</p>
@@ -188,7 +234,7 @@ export default function VisualizarParteEmergencia({
                   <p>{parteEmergencia.horaFin}</p>
                 </div>
               </div>
-              <div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Oficial a cargo</h3>
                 <p>
                   {parteEmergencia.oficial.claveRadial}{" "}
@@ -197,25 +243,27 @@ export default function VisualizarParteEmergencia({
                   {parteEmergencia.oficial.apellidomOficial}
                 </p>
               </div>
-              <div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Dirección</h3>
                 <p>{parteEmergencia.direccionEmergencia}</p>
               </div>
-              <div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Pre-Informe</h3>
                 <p>{parteEmergencia.preInforme || "Sin pre-informe"}</p>
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Llamar Empresa Química</h3>
+                <h3 className="text-lg font-semibold">
+                  Llamar Empresa Química
+                </h3>
                 <p>{parteEmergencia.llamarEmpresaQuimica ? "Sí" : "No"}</p>
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Descripción Material Peligroso</h3>
-                <p>{parteEmergencia.descripcionMaterialP || "Sin descripción"}</p>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">Folio Parte Asistencia</h3>
-                <p>{parteEmergencia.folioPAsistencia}</p>
+                <h3 className="text-lg font-semibold">
+                  Descripción Material Peligroso
+                </h3>
+                <p>
+                  {parteEmergencia.descripcionMaterialP || "Sin descripción"}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -236,4 +284,3 @@ export default function VisualizarParteEmergencia({
     </div>
   );
 }
-
