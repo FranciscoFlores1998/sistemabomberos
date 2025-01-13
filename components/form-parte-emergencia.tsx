@@ -348,8 +348,9 @@ export default function FormParteEmergencia({
       nombreInstitucion: getValues("institucionNombre"),
       tipoInstitucion: getValues("institucionDireccion"),
       nombrePersonaCargo: getValues("institucionTelefono"),
-      horaLlegada: getValues("institucionHoraLlegada"),
+      horaLlegada: getValues("institucionHoraLlegada") == "" ? null : getValues("institucionHoraLlegada"),
     };
+    console.log("dataInstitucion", dataInstitucion);
     setValue("institucionNombre", "");
     setValue("institucionDireccion", "");
     setValue("institucionTelefono", "");
@@ -430,6 +431,8 @@ export default function FormParteEmergencia({
 
         setMoviles(filtredMoviles);
         setAddedMoviles(data.moviles);
+      }else{
+        setMoviles(movilesData);
       }
       //eliminar los voluntarios agregados de todos los voluntarios disponibles
       if (data.voluntarios.length > 0 && data) {
@@ -441,6 +444,8 @@ export default function FormParteEmergencia({
         });
         setVoluntariosDisponibles(filtredVoluntarios);
         setAddedVoluntarios(data.voluntarios);
+      }else{
+        setVoluntariosDisponibles(voluntariosData);
       }
       setLoading(false);
     }
@@ -950,7 +955,7 @@ export default function FormParteEmergencia({
                             <TableCell>{victima.nombreVictima}</TableCell>
                             <TableCell>{victima.edadVictima}</TableCell>
                             <TableCell className="text-right">
-                              {victima.descripcionVictima}
+                              {victima.descripcion}
                             </TableCell>
                             <TableCell>
                               <Button
