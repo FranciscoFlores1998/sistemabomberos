@@ -1,5 +1,5 @@
 "use client";
-
+import Cookies from "js-cookie";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
@@ -53,6 +53,9 @@ interface ClaveEmergencia {
 }
 type SortColumn = "folioPEmergencia" | "fechaEmergencia" | "idClaveEmergencia";
 export default function ParteEmergencia() {
+  const user = Cookies.get("login");
+  const parseUSer = JSON.parse(user);
+
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [allPartes, setAllPartes] = useState<ParteEmergencia[]>([]);
@@ -337,20 +340,24 @@ export default function ParteEmergencia() {
                               Ver
                             </Button>
                           </Link>
-                          <Link
-                            href={`/parte-emergencia/editar/${parte.folioPEmergencia}`}
-                            passHref
-                          >
-                            <Button variant="outline" size="sm">
-                              Editar
-                            </Button>
-                          </Link>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
-                                Eliminar
+                          {parseUSer.cargo.idCargo === 1 && (
+                            <Link
+                              href={`/parte-emergencia/editar/${parte.folioPEmergencia}`}
+                              passHref
+                            >
+                              <Button variant="outline" size="sm">
+                                Editar
                               </Button>
-                            </AlertDialogTrigger>
+                            </Link>
+                          )}
+                          <AlertDialog>
+                            {parseUSer.cargo.idCargo === 1 && (
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                  Eliminar
+                                </Button>
+                              </AlertDialogTrigger>
+                            )}
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>

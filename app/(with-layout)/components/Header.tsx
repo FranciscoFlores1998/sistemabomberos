@@ -4,6 +4,10 @@ import Cookies from "js-cookie";
 import Link from "next/link";
 
 export default function Header() {
+  const user = Cookies.get("login");
+  //console.log(user);
+  const parseUSer = JSON.parse(user);
+  console.log(parseUSer);
   return (
     <header className="bg-blue-950 text-white p-4">
       <nav className="container mx-auto flex justify-between items-center">
@@ -31,15 +35,14 @@ export default function Header() {
               Reportes
             </Link>
           </li>
-          <li>
-            <Link href="/voluntario" className="hover:underline">
-              Voluntarios
-            </Link>
-          </li>
-          <Link
-            href="/mis-datos"
-            className="hover:underline"
-          >
+          {parseUSer.cargo.idCargo === 1 && (
+            <li>
+              <Link href="/voluntario" className="hover:underline">
+                Voluntarios
+              </Link>
+            </li>
+          )}
+          <Link href="/mis-datos" className="hover:underline">
             Mis Datos
           </Link>
           <li>

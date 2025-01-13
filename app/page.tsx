@@ -6,6 +6,4 @@ export default async function Home() {
   const login = cookiesStore.get("login");
   console.log(login?.value);
   login?.value == "false" || !login ? redirect('/login'):redirect('/home');
-  
-
 }
