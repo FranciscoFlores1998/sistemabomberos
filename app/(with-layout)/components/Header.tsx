@@ -5,9 +5,9 @@ import Link from "next/link";
 
 export default function Header() {
   const user = Cookies.get("login");
-  //console.log(user);
+
   const parseUSer = JSON.parse(user);
-  console.log(parseUSer);
+
   return (
     <header className="bg-blue-950 text-white p-4">
       <nav className="container mx-auto flex justify-between items-center">

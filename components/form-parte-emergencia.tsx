@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/datepicker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatearFecha } from "@/lib/formatearFecha";
+import { format, validate } from "@/lib/formatearRut";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toaster, toast } from "react-hot-toast";
 import FallbackSpinner from "./ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
 
 interface Voluntario {
   idVoluntario: number;
@@ -79,16 +90,36 @@ export default function FormParteEmergencia({
   const [partesAsistencia, setPartesAsistencia] = useState<ParteAsistencia[]>(
     []
   );
+  const [addedVictima, setAddedVictima] = useState([]);
+
+  const handleChangeRut = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    const formattedRut = format(value);
+    const isValid = validate(formattedRut);
+
+    if (isValid || getValues("victimRut") === "") {
+      clearErrors("victimRut");
+    } else {
+      setError("victimRut", {});
+    }
+
+    setValue("victimRut", formattedRut);
+  };
 
   const methods = useForm({ mode: "onChange" });
   const {
     register,
     setValue,
     watch,
+    getValues,
     handleSubmit,
     clearErrors,
+    setError,
+    reset,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = methods;
   const router = useRouter();
 
@@ -179,10 +210,9 @@ export default function FormParteEmergencia({
   };
 
   const handleAddMovil = (movilId: string) => {
-    console.log("movilId", movilId);
     //tiene que agregar al addedMoviles el movil seleccionado y elimiarlo de movilesDisponibles
     const movil = moviles.find((movil) => movil.idMovil === Number(movilId));
-    console.log("movil", movil);
+
     if (movil) {
       setAddedMoviles((prev) => [...prev, movil]);
       //eliminar el movil de moviles
@@ -237,6 +267,32 @@ export default function FormParteEmergencia({
       toast.error("Hubo un error al conectar con el servidor.");
     }
   };
+  const handleVictima = () => {
+    if (errors.victimRut) {
+      return;
+    }
+    //si ninguno de los campos de la victima presenta valores, retornar
+    if (
+      !getValues("victimRut") &&
+      !getValues("victimName") &&
+      !getValues("victimAge") &&
+      !getValues("victimDescription")
+    ) {
+      return;
+    }
+    const dataVictima = {
+      rutVictima: getValues("victimRut"),
+      nombreVictima: getValues("victimName"),
+      edadVictima: getValues("victimAge"),
+      descripcion: getValues("victimDescription"),
+    };
+
+    setValue("victimRut", "");
+    setValue("victimName", "");
+    setValue("victimAge", "");
+    setValue("victimDescription", "");
+    setAddedVictima((prev) => [...prev, dataVictima]);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -276,18 +332,17 @@ export default function FormParteEmergencia({
       setValue("descripcionMaterialP", data.descripcionMaterialP);
       setValue("direccionEmergencia", data.direccionEmergencia);
       setValue("oficialCargo", data.idOficial.toString());
-      console.log("data.idOficial", data.idOficial);
+
       setValue("idClaveEmergencia", data.idClaveEmergencia.toString());
       setValue("folioPAsistencia", data.folioPAsistencia.toString());
       setDate(new Date(data.fechaEmergencia));
-      setValue("fechaEmergencia", formatearFecha(data.fechaEmergencia));
       setValue(
         "idMaterialP",
         data.materialesP.length > 0
           ? data.materialesP[0].idMaterialP.toString()
           : ""
       );
-
+      setAddedVictima(data.victimas);
       const voluntariosData = await getVoluntarios();
       const movilesData = await getMoviles();
       const partesAsistenciaData = await getPartesAsistencia();
@@ -299,14 +354,14 @@ export default function FormParteEmergencia({
       setMaterialesPeligrosos(materialesPeligrososData);
 
       //eliminar los moviles agregados de todos los moviles disponibles
-      console.log("data.moviles", data.moviles);
+
       if (data.moviles.length > 0 && data) {
         const filtredMoviles = movilesData.filter((movil) => {
           return !data.moviles.some(
             (movilAdded) => movilAdded.idMovil === movil.idMovil
           );
         });
-        console.log("filtredMoviles", filtredMoviles);
+
         setMoviles(filtredMoviles);
         setAddedMoviles(data.moviles);
       }
@@ -327,7 +382,7 @@ export default function FormParteEmergencia({
 
   useEffect(() => {
     params?.folio ? fetchDataIdFolio() : fetchData();
-  }, [params?.folio]);
+  }, []);
 
   const onSubmitEmergency = async (data: any) => {
     console.log("data", data);
@@ -338,18 +393,21 @@ export default function FormParteEmergencia({
         horaFin: data.horaFin,
         fechaEmergencia: data.fechaEmergencia,
         preInforme: data.preInforme,
-        llamarEmpresaQuimica: data.llamarEmpresaQuimica,
+        llamarEmpresaQuimica: data.llamarEmpresaQuimica ?? false,
         descripcionMaterialP: data.descripcionMaterialP,
         direccionEmergencia: data.direccionEmergencia,
         idOficial: Number(data.oficialCargo),
         idClaveEmergencia: Number(data.idClaveEmergencia),
-        folioPAsistencia: Number(data.folioPAsistencia),
+        folioPAsistencia: data.folioPAsistencia
+          ? Number(data.folioPAsistencia)
+          : null,
       },
       moviles: addedMoviles.map((movil) => movil.idMovil),
       voluntarios: addedVoluntarios.map(
         (voluntario) => voluntario.idVoluntario
       ),
       materialesP: data.idMaterialP ? [Number(data.idMaterialP)] : [],
+      victimas: addedVictima.length > 0 ? addedVictima : [],
     };
     console.log("dataSend", dataSend);
     try {
@@ -497,19 +555,15 @@ export default function FormParteEmergencia({
 
             {/* Call Chemical Company Checkbox */}
             <div className="flex items-center space-x-2">
-              <Controller
-                name="llamarEmpresaQuimica"
-                control={control}
-                render={({ field }) => (
-                  <Checkbox
-                    id="llamarEmpresaQuimica"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                )}
+              <Checkbox
+                id="llamarEmpresaQuimica"
+                checked={watch("llamarEmpresaQuimica")}
+                onCheckedChange={(value) => {
+                  setValue("llamarEmpresaQuimica", value);
+                }}
               />
               <Label htmlFor="llamarEmpresaQuimica">
-                Llamar Empresa Química
+                Llamar a empresa química
               </Label>
             </div>
 
@@ -746,6 +800,112 @@ export default function FormParteEmergencia({
                 </ul>
               </div>
             </div>
+
+            <Card className="w-full max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>Información de la Víctima</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col space-y-4 mt-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="victimRut">RUT</Label>
+                      <Input
+                        id="victimRut"
+                        {...register("victimRut", {
+                          onChange: (e) => handleChangeRut(e),
+                        })}
+                        placeholder="Ingrese RUT"
+                        className={`${
+                          errors.victimRut
+                            ? "border-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
+                      />
+                      {errors.victimRut && (
+                        <p className="text-red-500 text-sm">RUT inválido</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="victimName">Nombre</Label>
+                      <Input
+                        id="victimName"
+                        {...register("victimName")}
+                        placeholder="Ingrese nombre"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="victimAge">Edad</Label>
+                    <Input
+                      id="victimAge"
+                      type="number"
+                      {...register("victimAge")}
+                      placeholder="Ingrese edad"
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="victimDescription">Descripción</Label>
+                    <Textarea
+                      id="victimDescription"
+                      {...register("victimDescription")}
+                      placeholder="Ingrese descripción"
+                      rows={3}
+                    />
+                  </div>
+                  <Button type="button" onClick={handleVictima}>
+                    Guardar Información de la Víctima
+                  </Button>
+                  {/* crear una tabla con las victimas agregadas */}
+                  {addedVictima.length > 0 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">
+                            Rut Victima
+                          </TableHead>
+                          <TableHead>Nombre Victima</TableHead>
+                          <TableHead>Edad Victima</TableHead>
+                          <TableHead className="text-right">
+                            Descripcion
+                          </TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {addedVictima.map((victima) => (
+                          <TableRow>
+                            <TableCell className="font-medium">
+                              {victima.rutVictima}
+                            </TableCell>
+                            <TableCell>{victima.nombreVictima}</TableCell>
+                            <TableCell>{victima.edadVictima}</TableCell>
+                            <TableCell className="text-right">
+                              {victima.descripcionVictima}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                onClick={() => {
+                                  setAddedVictima((prev) =>
+                                    prev.filter(
+                                      (victimaAdded) =>
+                                        victimaAdded.rutVictima !==
+                                        victima.rutVictima
+                                    )
+                                  );
+                                }}
+                              >
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             <Button type="submit" className="mt-4">
               {params?.folio
