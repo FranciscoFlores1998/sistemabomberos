@@ -91,6 +91,9 @@ export default function FormParteEmergencia({
     []
   );
   const [addedVictima, setAddedVictima] = useState([]);
+  const [addedInmuebles, setAddedInmuebles] = useState([]);
+  const [addedVehiculos, setAddedVehiculos] = useState([]);
+  const [addedInstituciones, setAddedInstituciones] = useState([]);
 
   const handleChangeRut = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -293,6 +296,66 @@ export default function FormParteEmergencia({
     setValue("victimDescription", "");
     setAddedVictima((prev) => [...prev, dataVictima]);
   };
+  const handleInmueble = () => {
+    if (
+      !getValues("inmuebleDireccion") &&
+      !getValues("inmuebleDescripcion") &&
+      !getValues("inmuebleEstado")
+    ) {
+      return;
+    }
+    const dataInmueble = {
+      direccion: getValues("inmuebleDireccion"),
+      tipoInmueble: getValues("inmuebleDescripcion"),
+      estadoInmueble: getValues("inmuebleEstado"),
+    };
+    setValue("inmuebleDireccion", "");
+    setValue("inmuebleDescripcion", "");
+    setValue("inmuebleEstado", "");
+    setAddedInmuebles((prev) => [...prev, dataInmueble]);
+  };
+  const handleVehiculo = () => {
+    if (
+      !getValues("vehiculoPatente") &&
+      !getValues("vehiculoMarca") &&
+      !getValues("vehiculoModelo") &&
+      !getValues("vehiculoTipo")
+    ) {
+      return;
+    }
+    const dataVehiculo = {
+      patente: getValues("vehiculoPatente"),
+      marca: getValues("vehiculoMarca"),
+      modelo: getValues("vehiculoModelo"),
+      tipoVehiculo: getValues("vehiculoTipo"),
+    };
+    setValue("vehiculoPatente", "");
+    setValue("vehiculoMarca", "");
+    setValue("vehiculoModelo", "");
+    setValue("vehiculoTipo", "");
+    setAddedVehiculos((prev) => [...prev, dataVehiculo]);
+  };
+  const handleInstitucion = () => {
+    if (
+      !getValues("institucionNombre") &&
+      !getValues("institucionDireccion") &&
+      !getValues("institucionTelefono") &&
+      !getValues("institucionHoraLlegada")
+    ) {
+      return;
+    }
+    const dataInstitucion = {
+      nombreInstitucion: getValues("institucionNombre"),
+      tipoInstitucion: getValues("institucionDireccion"),
+      nombrePersonaCargo: getValues("institucionTelefono"),
+      horaLlegada: getValues("institucionHoraLlegada"),
+    };
+    setValue("institucionNombre", "");
+    setValue("institucionDireccion", "");
+    setValue("institucionTelefono", "");
+    setValue("institucionHoraLlegada", "");
+    setAddedInstituciones((prev) => [...prev, dataInstitucion]);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -343,6 +406,9 @@ export default function FormParteEmergencia({
           : ""
       );
       setAddedVictima(data.victimas);
+      setAddedInmuebles(data.inmuebles);
+      setAddedVehiculos(data.vehiculos);
+      setAddedInstituciones(data.instituciones);
       const voluntariosData = await getVoluntarios();
       const movilesData = await getMoviles();
       const partesAsistenciaData = await getPartesAsistencia();
@@ -408,6 +474,9 @@ export default function FormParteEmergencia({
       ),
       materialesP: data.idMaterialP ? [Number(data.idMaterialP)] : [],
       victimas: addedVictima.length > 0 ? addedVictima : [],
+      inmuebles: addedInmuebles.length > 0 ? addedInmuebles : [],
+      vehiculos: addedVehiculos.length > 0 ? addedVehiculos : [],
+      instituciones: addedInstituciones.length > 0 ? addedInstituciones : [],
     };
     console.log("dataSend", dataSend);
     try {
@@ -576,7 +645,7 @@ export default function FormParteEmergencia({
                   clearErrors("idMaterialP");
                 }}
                 value={watch("idMaterialP")}
-                {...register("idMaterialP", { required: true })}
+                {...register("idMaterialP")}
               >
                 <SelectTrigger
                   className={`w-full ${
@@ -803,7 +872,7 @@ export default function FormParteEmergencia({
 
             <Card className="w-full max-w-2xl mx-auto">
               <CardHeader>
-                <CardTitle>Información de la Víctima</CardTitle>
+                <CardTitle>Información de Victimas</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col space-y-4 mt-6">
@@ -850,7 +919,7 @@ export default function FormParteEmergencia({
                       id="victimDescription"
                       {...register("victimDescription")}
                       placeholder="Ingrese descripción"
-                      rows={3}
+                      
                     />
                   </div>
                   <Button type="button" onClick={handleVictima}>
@@ -907,6 +976,269 @@ export default function FormParteEmergencia({
               </CardContent>
             </Card>
 
+            <Card className="w-full max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>Información Inmuebles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col space-y-4 mt-6">
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="inmuebleDireccion">Dirección</Label>
+                    <Input
+                      id="inmuebleDireccion"
+                      {...register("inmuebleDireccion")}
+                      placeholder="Ingrese dirección"
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="inmuebleDescripcion">
+                      Tipo de Inmueble
+                    </Label>
+                    <Input
+                      id="inmuebleDescripcion"
+                      {...register("inmuebleDescripcion")}
+                      placeholder="Ingrese tipo de inmueble"
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="inmuebleEstado">Estado del Inmueble</Label>
+                    <Input
+                      id="inmuebleEstado"
+                      {...register("inmuebleEstado")}
+                      placeholder="Ingrese estado del inmueble"
+                    />
+                  </div>
+                  <Button type="button" onClick={handleInmueble}>
+                    Guardar Información del Inmueble
+                  </Button>
+                  {addedInmuebles.length > 0 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Dirección</TableHead>
+                          <TableHead>Tipo de Inmueble</TableHead>
+                          <TableHead>Estado del Inmueble</TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {addedInmuebles.map((inmueble, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{inmueble.direccion}</TableCell>
+                            <TableCell>{inmueble.tipoInmueble}</TableCell>
+                            <TableCell>{inmueble.estadoInmueble}</TableCell>
+                            <TableCell>
+                              <Button
+                                onClick={() => {
+                                  //agregar inmuebles al array de inmuebles
+                                  setAddedInmuebles((prev) =>
+                                    prev.filter(
+                                      (inmuebleAdded) =>
+                                        inmuebleAdded.direccion !==
+                                        inmueble.direccion
+                                    )
+                                  );
+                                }}
+                              >
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* informacion del vehiculo */}
+            <Card className="w-full max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>Información de Vehiculos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col space-y-4 mt-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="vehiculoPatente">Patente</Label>
+                      <Input
+                        id="vehiculoPatente"
+                        {...register("vehiculoPatente")}
+                        placeholder="Ingrese patente"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="vehiculoMarca">Marca</Label>
+                      <Input
+                        id="vehiculoMarca"
+                        {...register("vehiculoMarca")}
+                        placeholder="Ingrese marca"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="vehiculoModelo">Modelo</Label>
+                      <Input
+                        id="vehiculoModelo"
+                        {...register("vehiculoModelo")}
+                        placeholder="Ingrese modelo"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="vehiculoTipo">Tipo de Vehículo</Label>
+                      <Input
+                        id="vehiculoTipo"
+                        {...register("vehiculoTipo")}
+                        placeholder="Ingrese tipo de vehículo"
+                      />
+                    </div>
+                  </div>
+                  <Button type="button" onClick={handleVehiculo}>
+                    Guardar Información del Vehículo
+                  </Button>
+                  {addedVehiculos.length > 0 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Patente</TableHead>
+                          <TableHead>Marca</TableHead>
+                          <TableHead>Modelo</TableHead>
+                          <TableHead>Tipo de Vehículo</TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {addedVehiculos.map((vehiculo, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{vehiculo.patente}</TableCell>
+                            <TableCell>{vehiculo.marca}</TableCell>
+                            <TableCell>{vehiculo.modelo}</TableCell>
+                            <TableCell>{vehiculo.tipoVehiculo}</TableCell>
+                            <TableCell>
+                              <Button
+                                onClick={() => {
+                                  setAddedVehiculos((prev) =>
+                                    prev.filter(
+                                      (vehiculoAdded) =>
+                                        vehiculoAdded.patente !==
+                                        vehiculo.patente
+                                    )
+                                  );
+                                }}
+                              >
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* informacion de la institucion */}
+            <Card className="w-full max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>Información de Instituciones</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col space-y-4 mt-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="institucionNombre">Nombre</Label>
+                      <Input
+                        id="institucionNombre"
+                        {...register("institucionNombre")}
+                        placeholder="Ingrese nombre"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="institucionDireccion">
+                        Tipo de Institución
+                      </Label>
+                      <Input
+                        id="institucionDireccion"
+                        {...register("institucionDireccion")}
+                        placeholder="Ingrese tipo de institución"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="institucionTelefono">
+                        Nombre Persona Cargo
+                      </Label>
+                      <Input
+                        id="institucionTelefono"
+                        {...register("institucionTelefono")}
+                        placeholder="Ingrese nombre de la persona a cargo"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="institucionHoraLlegada">
+                        Hora de Llegada
+                      </Label>
+                      <Input
+                        id="institucionHoraLlegada"
+                        type="time"
+                        {...register("institucionHoraLlegada")}
+                        placeholder="Ingrese hora de llegada"
+                      />
+                    </div>
+                  </div>
+                  <Button type="button" onClick={handleInstitucion}>
+                    Guardar Información de la Institución
+                  </Button>
+                  {addedInstituciones.length > 0 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Tipo de Institución</TableHead>
+                          <TableHead>Nombre Persona Cargo</TableHead>
+                          <TableHead>Hora de Llegada</TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {addedInstituciones.map((institucion, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              {institucion.nombreInstitucion}
+                            </TableCell>
+                            <TableCell>{institucion.tipoInstitucion}</TableCell>
+                            <TableCell>
+                              {institucion.nombrePersonaCargo}
+                            </TableCell>
+                            <TableCell>{institucion.horaLlegada}</TableCell>
+                            <TableCell>
+                              <Button
+                                onClick={() => {
+                                  setAddedInstituciones((prev) =>
+                                    prev.filter(
+                                      (institucionAdded) =>
+                                        institucionAdded.nombreInstitucion !==
+                                        institucion.nombreInstitucion
+                                    )
+                                  );
+                                }}
+                              >
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <Button type="submit" className="mt-4">
               {params?.folio
                 ? "Actualizar Parte de Emergencia"
@@ -919,3 +1251,5 @@ export default function FormParteEmergencia({
     </div>
   );
 }
+
+//moviles: addedMoviles.length > 0 ? addedMoviles.map((m) => m.idMovil) : [],
