@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import FallbackSpinner from "@/components/ui/spinner";
 import { formatearFecha } from "@/lib/formatearFecha";
-import { Download } from 'lucide-react';
+import { Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -60,7 +60,8 @@ export default function VisualizarParteAsistencia({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [parteAsistencia, setParteAsistencia] = useState<ParteAsistenciaResponse | null>(null);
+  const [parteAsistencia, setParteAsistencia] =
+    useState<ParteAsistenciaResponse | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,28 +93,28 @@ export default function VisualizarParteAsistencia({
   }, [folio]);
 
   const generatePDF = async () => {
-    const element = document.getElementById('pdf-content');
+    const element = document.getElementById("pdf-content");
     if (!element) return;
 
     // Aplicar estilos específicos para PDF antes de generar
-    element.classList.add('pdf-mode');
+    element.classList.add("pdf-mode");
 
     const canvas = await html2canvas(element, {
       scale: 2,
       logging: false,
       useCORS: true,
-      backgroundColor: '#ffffff', // Asegura un fondo blanco
+      backgroundColor: "#ffffff", // Asegura un fondo blanco
     });
 
     // Remover estilos específicos para PDF después de generar
-    element.classList.remove('pdf-mode');
+    element.classList.remove("pdf-mode");
 
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL("image/png");
 
     const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
     });
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -124,7 +125,14 @@ export default function VisualizarParteAsistencia({
     const imgX = (pdfWidth - imgWidth * ratio) / 2;
     const imgY = 10; // Ajustado para dar un poco más de margen superior
 
-    pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+    pdf.addImage(
+      imgData,
+      "PNG",
+      imgX,
+      imgY,
+      imgWidth * ratio,
+      imgHeight * ratio
+    );
     pdf.save(`parte-asistencia-${folio}.pdf`);
   };
 
@@ -143,7 +151,8 @@ export default function VisualizarParteAsistencia({
           body * {
             visibility: hidden;
           }
-          #pdf-content, #pdf-content * {
+          #pdf-content,
+          #pdf-content * {
             visibility: visible;
           }
           #pdf-content {
@@ -162,29 +171,49 @@ export default function VisualizarParteAsistencia({
           color: #1a202c;
           font-size: 16px;
           margin-bottom: 8px;
+          padding: 8px;
+          background-color: #f0f0f0;
+          border-bottom: 1px solid #d1d1d1;
         }
         .pdf-mode p {
           margin-bottom: 8px;
+          padding: 8px;
         }
         .pdf-mode .grid {
-          display: block;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
         }
         .pdf-mode .grid > div {
-          margin-bottom: 16px;
+          border: 1px solid #d1d1d1;
+          border-radius: 4px;
+          padding: 8px;
+          background-color: #f9f9f9;
+        }
+        .pdf-mode ul {
+          padding-left: 20px;
+        }
+        .pdf-mode li {
+          margin-bottom: 4px;
+        }
+        .pdf-mode .full-width {
+          grid-column: 1 / -1;
         }
       `}</style>
       <Card className="w-full max-w-3xl mx-auto">
         <div id="pdf-content" className="p-6">
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-center">Parte de Asistencia número {folio}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">
+              Parte de Asistencia número {folio}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold">Tipo de Citación</h3>
-                  <p>{parteAsistencia.tipoLlamado.nombreTipoLlamado}</p>
-                </div>
+              <div className="full-width">
+                <h3 className="text-lg font-semibold">Tipo de Citación</h3>
+                <p>{parteAsistencia.tipoLlamado.nombreTipoLlamado}</p>
+              </div>
+              <div className="full-width grid grid-cols-3 gap-4">
                 <div>
                   <h3 className="text-lg font-semibold">Fecha</h3>
                   <p>{formatearFecha(parteAsistencia.fechaAsistencia)}</p>
@@ -198,37 +227,38 @@ export default function VisualizarParteAsistencia({
                   <p>{parteAsistencia.horaFin}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold">Oficial a cargo del cuerpo</h3>
-                  <p>
-                    {parteAsistencia.encargadoCuerpo.claveRadial}{" "}
-                    {parteAsistencia.encargadoCuerpo.nombreVol}{" "}
-                    {parteAsistencia.encargadoCuerpo.apellidop}{" "}
-                    {parteAsistencia.encargadoCuerpo.apellidom}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Oficial Compañía</h3>
-                  <p>
-                    {parteAsistencia.encargadoCompania.claveRadial}{" "}
-                    {parteAsistencia.encargadoCompania.nombreVol}{" "}
-                    {parteAsistencia.encargadoCompania.apellidop}{" "}
-                    {parteAsistencia.encargadoCompania.apellidom}
-                  </p>
-                </div>
+              <div className="full-width">
+                <h3 className="text-lg font-semibold">
+                  Oficial a cargo del cuerpo
+                </h3>
+                <p>
+                  {parteAsistencia.encargadoCuerpo.claveRadial}{" "}
+                  {parteAsistencia.encargadoCuerpo.nombreVol}{" "}
+                  {parteAsistencia.encargadoCuerpo.apellidop}{" "}
+                  {parteAsistencia.encargadoCuerpo.apellidom}
+                </p>
               </div>
-              <div>
+              <div className="full-width">
+                <h3 className="text-lg font-semibold">Oficial Compañía</h3>
+                <p>
+                  {parteAsistencia.encargadoCompania.claveRadial}{" "}
+                  {parteAsistencia.encargadoCompania.nombreVol}{" "}
+                  {parteAsistencia.encargadoCompania.apellidop}{" "}
+                  {parteAsistencia.encargadoCompania.apellidom}
+                </p>
+              </div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Dirección</h3>
                 <p>{parteAsistencia.direccionAsistencia}</p>
               </div>
-              <div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Observaciones</h3>
                 <p>{parteAsistencia.observaciones || "Sin observaciones"}</p>
               </div>
-              <div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Móviles</h3>
-                {parteAsistencia.moviles && parteAsistencia.moviles.length > 0 ? (
+                {parteAsistencia.moviles &&
+                parteAsistencia.moviles.length > 0 ? (
                   <ul className="list-disc pl-5">
                     {parteAsistencia.moviles.map((movil) => (
                       <li key={movil.idMovil}>
@@ -237,10 +267,12 @@ export default function VisualizarParteAsistencia({
                     ))}
                   </ul>
                 ) : (
-                  <p>No hay móviles registrados para este parte de asistencia.</p>
+                  <p>
+                    No hay móviles registrados para este parte de asistencia.
+                  </p>
                 )}
               </div>
-              <div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Voluntarios</h3>
                 {parteAsistencia.voluntarios &&
                 parteAsistencia.voluntarios.length > 0 ? (
@@ -253,31 +285,32 @@ export default function VisualizarParteAsistencia({
                   </ul>
                 ) : (
                   <p>
-                    No hay voluntarios registrados para este parte de asistencia.
+                    No hay voluntarios registrados para este parte de
+                    asistencia.
                   </p>
                 )}
               </div>
-              <div>
+              <div className="full-width">
                 <h3 className="text-lg font-semibold">Total Asistencia</h3>
                 <p>{parteAsistencia.totalAsistencia}</p>
               </div>
             </div>
           </CardContent>
+          <CardFooter className="flex justify-between mt-4"></CardFooter>
         </div>
-        <CardFooter className="flex justify-between mt-4">
-          <Button variant="outline" onClick={() => router.back()}>
-            Volver
-          </Button>
-          <Button
-            onClick={generatePDF}
-            className="bg-primary text-primary-foreground"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Descargar PDF
-          </Button>
-        </CardFooter>
       </Card>
+      <div className="flex justify-between mt-4">
+      <Button variant="outline" onClick={() => router.back()}>
+        Volver
+      </Button>
+      <Button
+        onClick={generatePDF}
+        className="bg-primary text-primary-foreground"
+      >
+        <Download className="mr-2 h-4 w-4" />
+        Descargar PDF
+      </Button>
+    </div>
     </div>
   );
 }
-
