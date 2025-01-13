@@ -59,7 +59,9 @@ export default function FormParteEmergencia({
   params?: { folio: string };
 }) {
   const [loading, setLoading] = useState(true);
-  const [oficialParteEmergencia, setOficialParteEmergencia] = useState<Voluntario[]>([]);
+  const [oficialParteEmergencia, setOficialParteEmergencia] = useState<
+    Voluntario[]
+  >([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const [moviles, setMoviles] = useState<Movil[]>([]);
@@ -265,6 +267,7 @@ export default function FormParteEmergencia({
     );
     if (response.ok) {
       const data = await response.json();
+      console.log("data", data);
       setValue("horaInicio", data.horaInicio);
       setValue("horaFin", data.horaFin);
       setValue("fechaEmergencia", formatearFecha(data.fechaEmergencia));
@@ -272,11 +275,18 @@ export default function FormParteEmergencia({
       setValue("llamarEmpresaQuimica", data.llamarEmpresaQuimica);
       setValue("descripcionMaterialP", data.descripcionMaterialP);
       setValue("direccionEmergencia", data.direccionEmergencia);
-      setValue("idOficial", data.idOficial);
-      setValue("idClaveEmergencia", data.idClaveEmergencia);
-      setValue("folioPAsistencia", data.folioPAsistencia);
+      setValue("oficialCargo", data.idOficial.toString());
+      console.log("data.idOficial", data.idOficial);
+      setValue("idClaveEmergencia", data.idClaveEmergencia.toString());
+      setValue("folioPAsistencia", data.folioPAsistencia.toString());
       setDate(new Date(data.fechaEmergencia));
       setValue("fechaEmergencia", formatearFecha(data.fechaEmergencia));
+      setValue(
+        "idMaterialP",
+        data.materialesP.length > 0
+          ? data.materialesP[0].idMaterialP.toString()
+          : ""
+      );
 
       const voluntariosData = await getVoluntarios();
       const movilesData = await getMoviles();
@@ -333,12 +343,13 @@ export default function FormParteEmergencia({
         direccionEmergencia: data.direccionEmergencia,
         idOficial: Number(data.oficialCargo),
         idClaveEmergencia: Number(data.idClaveEmergencia),
-        folioPAsistencia: Number(data.folio),
+        folioPAsistencia: Number(data.folioPAsistencia),
       },
       moviles: addedMoviles.map((movil) => movil.idMovil),
       voluntarios: addedVoluntarios.map(
         (voluntario) => voluntario.idVoluntario
       ),
+      materialesP: data.idMaterialP ? [Number(data.idMaterialP)] : [],
     };
     console.log("dataSend", dataSend);
     try {
@@ -473,9 +484,6 @@ export default function FormParteEmergencia({
                 </SelectContent>
               </Select>
             </div>
-
-
-
 
             {/* Observations Textarea */}
             <div className="flex flex-col gap-y-2 space-y-1.5">
@@ -613,69 +621,66 @@ export default function FormParteEmergencia({
               />
             </div>
             <div className="flex flex-col space-y-4 mt-6">
-                <h3 className="text-lg font-semibold">
-                  Agregar Móviles al Parte de Emergencia
-                </h3>
-                <div className="flex space-x-2">
-                  <Select
-                    onValueChange={(value) => {
-                      setValue("movil", value);
-                      clearErrors("movil");
-                      handleAddMovil(value);
-                    }}
-                    value={watch("movil")}
-                
-                  >
-                    <SelectTrigger
-                      className={`w-full `}
-                    >
-                      <SelectValue placeholder="Moviles" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {moviles.map((movil) => (
-                        <SelectItem
-                          key={movil.idMovil}
-                          value={movil.idMovil.toString()}
-                        >
-                          {movil.nomenclatura}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="mt-4">
-                  <h4 className="text-md font-semibold mb-2">
-                    Móviles Agregados:
-                  </h4>
-                  <ul className="list-none">
-                    {addedMoviles.map((movil) => (
-                      <li
+              <h3 className="text-lg font-semibold">
+                Agregar Móviles al Parte de Emergencia
+              </h3>
+              <div className="flex space-x-2">
+                <Select
+                  onValueChange={(value) => {
+                    setValue("movil", value);
+                    clearErrors("movil");
+                    handleAddMovil(value);
+                  }}
+                  value={watch("movil")}
+                >
+                  <SelectTrigger className={`w-full `}>
+                    <SelectValue placeholder="Moviles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {moviles.map((movil) => (
+                      <SelectItem
                         key={movil.idMovil}
-                        className="flex items-center gap-4 py-1"
+                        value={movil.idMovil.toString()}
                       >
-                        <div>
-                          {movil.nomenclatura} - {movil.especialidad}
-                        </div>
-                        <div>
-                          <Button
-                            onClick={() => {
-                              setMoviles((prev) => [...prev, movil]);
-                              setAddedMoviles((prev) =>
-                                prev.filter(
-                                  (movilAdded) =>
-                                    movilAdded.idMovil !== movil.idMovil
-                                )
-                              );
-                            }}
-                          >
-                            Eliminar
-                          </Button>
-                        </div>
-                      </li>
+                        {movil.nomenclatura}
+                      </SelectItem>
                     ))}
-                  </ul>
-                </div>
+                  </SelectContent>
+                </Select>
               </div>
+              <div className="mt-4">
+                <h4 className="text-md font-semibold mb-2">
+                  Móviles Agregados:
+                </h4>
+                <ul className="list-none">
+                  {addedMoviles.map((movil) => (
+                    <li
+                      key={movil.idMovil}
+                      className="flex items-center gap-4 py-1"
+                    >
+                      <div>
+                        {movil.nomenclatura} - {movil.especialidad}
+                      </div>
+                      <div>
+                        <Button
+                          onClick={() => {
+                            setMoviles((prev) => [...prev, movil]);
+                            setAddedMoviles((prev) =>
+                              prev.filter(
+                                (movilAdded) =>
+                                  movilAdded.idMovil !== movil.idMovil
+                              )
+                            );
+                          }}
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
             <div className="flex flex-col space-y-4 mt-6">
               <h3 className="text-lg font-semibold">
                 Agregar Voluntarios al Parte de Emergencia

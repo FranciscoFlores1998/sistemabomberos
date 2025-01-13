@@ -43,11 +43,6 @@ export default function Header() {
             Mis Datos
           </Link>
           <li>
-            <Link href="/usuario" className="hover:underline">
-              Control de usuarios
-            </Link>
-          </li>
-          <li>
             <Link
               href="/"
               className="hover:underline"
