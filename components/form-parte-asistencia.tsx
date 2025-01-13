@@ -212,7 +212,6 @@ export default function FormParteAsistencia({
       if (data.moviles.length > 0 && data) {
         const filtredMoviles = movilesData.filter((movil) => {
           return !data.moviles.some((movilAdded) => movilAdded.idMovil === movil.idMovil);
-
         })
         console.log("filtredMoviles", filtredMoviles);
         setMoviles(filtredMoviles);
