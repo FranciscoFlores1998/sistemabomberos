@@ -105,7 +105,7 @@ export default function ReportesPage() {
         setPartesEmergencia(parsedEmergenciaData)
         setClavesEmergencia(parsedClavesData)
         setVoluntarios(parsedVoluntariosData)
-
+ 
         //const totalAsistencias = parsedAsistenciaData.reduce((sum, parte) => sum + (parte.totalAsistencia || 0), 0)
         setSummaryStats({
           totalAsistencias: parsedAsistenciaData.length, 
