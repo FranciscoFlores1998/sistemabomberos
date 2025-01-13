@@ -1,5 +1,5 @@
 "use client";
-
+import Cookies from "js-cookie";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +52,9 @@ interface TipoCitacion {
 }
 type SortColumn = "folioPAsistencia" | "fechaAsistencia";
 export default function ParteAsistencia() {
+  const user = Cookies.get("login");
+  const parseUSer = JSON.parse(user);
+
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [allPartes, setAllPartes] = useState<ParteAsistencia[]>([]);
@@ -335,20 +338,24 @@ export default function ParteAsistencia() {
                               Visualizar
                             </Button>
                           </Link>
-                          <Link
-                            href={`/parte-asistencia/editar/${parte.folioPAsistencia}`}
-                            passHref
-                          >
-                            <Button variant="outline" size="sm">
-                              Editar
-                            </Button>
-                          </Link>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
-                                Eliminar
+                          {parseUSer.cargo.idCargo === 1 && (
+                            <Link
+                              href={`/parte-asistencia/editar/${parte.folioPAsistencia}`}
+                              passHref
+                            >
+                              <Button variant="outline" size="sm">
+                                Editar
                               </Button>
-                            </AlertDialogTrigger>
+                            </Link>
+                          )}
+                          <AlertDialog>
+                            {parseUSer.cargo.idCargo === 1 && (
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                  Eliminar
+                                </Button>
+                              </AlertDialogTrigger>
+                            )}
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
