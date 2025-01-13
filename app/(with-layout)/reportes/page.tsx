@@ -10,6 +10,7 @@ interface SummaryStats {
   totalAsistencias: number;
   totalEmergencias: number;
   totalVoluntarios: number;
+  totalCitaciones: number;
 }
 
 interface ParteAsistencia {
@@ -26,6 +27,11 @@ interface ParteEmergencia {
   horaFin: string;
   direccionEmergencia: string;
   idClaveEmergencia: number;
+}
+
+interface TipoCitacion {
+  idTipoCitacion: number;
+  nombreTipoCitacion: string;
 }
 
 interface ClaveEmergencia {
@@ -49,10 +55,12 @@ export default function ReportesPage() {
     totalAsistencias: 0,
     totalEmergencias: 0,
     totalVoluntarios: 0,
+    totalCitaciones: 0,
   })
   const [partesAsistencia, setPartesAsistencia] = useState<ParteAsistencia[]>([])
   const [partesEmergencia, setPartesEmergencia] = useState<ParteEmergencia[]>([])
   const [clavesEmergencia, setClavesEmergencia] = useState<ClaveEmergencia[]>([])
+  const [tipoCitacion, setTipoCitacion] = useState<TipoCitacion[]>([])
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +68,7 @@ export default function ReportesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [asistenciaResponse, emergenciaResponse, clavesResponse, voluntariosResponse] = await Promise.all([
+        const [asistenciaResponse, emergenciaResponse, clavesResponse, voluntariosResponse, tipoCitacionResponse] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`, {
             headers: {
               "Content-Type": "application/json",
@@ -84,10 +92,16 @@ export default function ReportesPage() {
               "Content-Type": "application/json",
               "ngrok-skip-browser-warning": "true",
             },
-          })
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }),
         ])
 
-        if (!asistenciaResponse.ok || !emergenciaResponse.ok || !clavesResponse.ok || !voluntariosResponse.ok) {
+        if (!asistenciaResponse.ok || !emergenciaResponse.ok || !clavesResponse.ok || !voluntariosResponse.ok || !tipoCitacionResponse.ok) {
           throw new Error('Failed to fetch data')
         }
 
@@ -95,22 +109,25 @@ export default function ReportesPage() {
         const emergenciaData = await emergenciaResponse.json()
         const clavesData = await clavesResponse.json()
         const voluntariosData = await voluntariosResponse.json()
+        const tipoCitacionData = await tipoCitacionResponse.json()
 
         const parsedAsistenciaData = Array.isArray(asistenciaData) ? asistenciaData : []
         const parsedEmergenciaData = Array.isArray(emergenciaData) ? emergenciaData : []
         const parsedClavesData = Array.isArray(clavesData) ? clavesData : []
         const parsedVoluntariosData = Array.isArray(voluntariosData) ? voluntariosData : []
+        const parsedTipoCitacionData = Array.isArray(tipoCitacionData) ? tipoCitacionData : []
 
         setPartesAsistencia(parsedAsistenciaData)
         setPartesEmergencia(parsedEmergenciaData)
         setClavesEmergencia(parsedClavesData)
         setVoluntarios(parsedVoluntariosData)
+        setTipoCitacion(parsedTipoCitacionData)
  
-        //const totalAsistencias = parsedAsistenciaData.reduce((sum, parte) => sum + (parte.totalAsistencia || 0), 0)
         setSummaryStats({
           totalAsistencias: parsedAsistenciaData.length, 
           totalEmergencias: parsedEmergenciaData.length,
           totalVoluntarios: parsedVoluntariosData.length,
+          totalCitaciones: parsedTipoCitacionData.length
         })
       } catch (err) {
         setError('Error fetching data')
@@ -125,15 +142,6 @@ export default function ReportesPage() {
 
   if (loading) return <p>Cargando datos...</p>
   if (error) return <p className="text-red-500">{error}</p>
-
-  const dummyData = [
-    { name: 'Ene', asistencias: 40, emergencias: 24, voluntarios: 98 },
-    { name: 'Feb', asistencias: 30, emergencias: 13, voluntarios: 85 },
-    { name: 'Mar', asistencias: 20, emergencias: 38, voluntarios: 107 },
-    { name: 'Abr', asistencias: 27, emergencias: 39, voluntarios: 112 },
-    { name: 'May', asistencias: 18, emergencias: 48, voluntarios: 95 },
-    { name: 'Jun', asistencias: 23, emergencias: 38, voluntarios: 103 },
-  ];
 
   const asistenciaChartData = partesAsistencia
     .filter(parte => parte.fechaAsistencia && parte.totalAsistencia !== undefined)
@@ -203,19 +211,20 @@ export default function ReportesPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Resumen General</CardTitle>
-          <CardDescription>Gráfico comparativo de los últimos 6 meses</CardDescription>
+          <CardDescription>Gráfico comparativo de totales actuales</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dummyData}>
+            <BarChart data={[summaryStats]}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="asistencias" fill="#8884d8" />
-              <Bar dataKey="emergencias" fill="#82ca9d" />
-              <Bar dataKey="voluntarios" fill="#ffc658" />
+              <Bar dataKey="totalAsistencias" name="Asistencias" fill="#8884d8" />
+              <Bar dataKey="totalEmergencias" name="Emergencias" fill="#82ca9d" />
+              <Bar dataKey="totalVoluntarios" name="Voluntarios" fill="#ffc658" />
+              <Bar dataKey="totalCitaciones" name="Citaciones" fill="#ff8042" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -255,24 +264,6 @@ export default function ReportesPage() {
                     )}
                   </CardContent>
                 </Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Folio</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Total Asistencia</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {partesAsistencia.slice(0, 5).map((parte) => (
-                      <TableRow key={parte.folioPAsistencia}>
-                        <TableCell>{parte.folioPAsistencia}</TableCell>
-                        <TableCell>{parte.fechaAsistencia}</TableCell>
-                        <TableCell>{parte.totalAsistencia}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
               </div>
             </CardContent>
           </Card>
@@ -316,32 +307,6 @@ export default function ReportesPage() {
                     )}
                   </CardContent>
                 </Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Folio</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Hora Inicio</TableHead>
-                      <TableHead>Hora Fin</TableHead>
-                      <TableHead>Dirección</TableHead>
-                      <TableHead>Clave</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {partesEmergencia.slice(0, 5).map((parte) => (
-                      <TableRow key={parte.folioPEmergencia}>
-                        <TableCell>{parte.folioPEmergencia}</TableCell>
-                        <TableCell>{parte.fechaEmergencia}</TableCell>
-                        <TableCell>{parte.horaInicio}</TableCell>
-                        <TableCell>{parte.horaFin}</TableCell>
-                        <TableCell>{parte.direccionEmergencia}</TableCell>
-                        <TableCell>
-                          {clavesEmergencia.find(clave => clave.idClaveEmergencia === parte.idClaveEmergencia)?.nombreClaveEmergencia || 'Desconocido'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
               </div>
             </CardContent>
           </Card>
@@ -374,26 +339,6 @@ export default function ReportesPage() {
                     )}
                   </CardContent>
                 </Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>RUT</TableHead>
-                      <TableHead>Clave Radial</TableHead>
-                      <TableHead>Compañía</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {voluntarios.slice(0, 5).map((voluntario) => (
-                      <TableRow key={voluntario.idVoluntario}>
-                        <TableCell>{voluntario.nombreVol}</TableCell>
-                        <TableCell>{voluntario.rutVoluntario}</TableCell>
-                        <TableCell>{voluntario.claveRadial}</TableCell>
-                        <TableCell>Compañía {voluntario.idCompania}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
               </div>
             </CardContent>
           </Card>
