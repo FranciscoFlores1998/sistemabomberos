@@ -193,14 +193,14 @@ export default function FormParteAsistencia({
     );
     if (response.ok) {
       const data = await response.json();
-      setValue("tipoCitacion", data.idTipoLlamado.toString());
+      setValue("tipoCitacion",data.idTipoLlamado ? data.idTipoLlamado.toString():'');
       setValue("horaInicio", data.horaInicio);
       setValue("horaFin", data.horaFin);
       setValue("direccionAsistencia", data.direccionAsistencia);
-      setValue("oficialCargo", data.aCargoDelCuerpo.toString());
-      setValue("oficialCompania", data.aCargoDeLaCompania.toString());
+      setValue("oficialCargo",data.aCargoDelCuerpo ? data.aCargoDelCuerpo.toString():'');
+      setValue("oficialCompania",data.aCargoDeLaCompania ? data.aCargoDeLaCompania.toString():'');
       setValue("observaciones", data.observaciones);
-      setValue("totalAsistencia", data.totalAsistencia.toString());
+      setValue("totalAsistencia",data.totalAsistencia ? data.totalAsistencia.toString():'');
       setDate(new Date(data.fechaAsistencia));
       setValue("fechaAsistencia", formatearFecha(data.fechaAsistencia));
 
@@ -441,7 +441,7 @@ export default function FormParteAsistencia({
                       {oficialCompania.claveRadial} - {oficialCompania.nombreVol} {oficialCompania.apellidop} {oficialCompania.apellidom}
                     </SelectItem>
                   ))}
-                </SelectContent>|
+                </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-y-2 space-y-1.5">

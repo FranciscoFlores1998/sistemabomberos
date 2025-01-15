@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function Header() {
   const user = Cookies.get("login");
 
-  const parseUSer = JSON.parse(user);
+  const parseUSer = user? JSON.parse(user) : {cargo: {idCargo: 0}};
 
   return (
     <header className="bg-blue-950 text-white p-4">

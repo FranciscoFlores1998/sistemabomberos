@@ -319,7 +319,7 @@ export default function VisualizarParteEmergencia({
                   <h3 className="text-lg font-semibold">
                     Clasificación del Material Peligroso
                   </h3>
-                  <p>{parteEmergencia.materialesP[0].clasificacion}</p>
+                  <p>{parteEmergencia.materialesP.length > 0 ? parteEmergencia.materialesP[0].clasificacion :""}</p>
                 </div>
               </div>
               <div className="full-width pdf-mode grid">

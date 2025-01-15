@@ -53,7 +53,7 @@ interface TipoCitacion {
 type SortColumn = "folioPAsistencia" | "fechaAsistencia";
 export default function ParteAsistencia() {
   const user = Cookies.get("login");
-  const parseUSer = JSON.parse(user);
+  const parseUSer = user ? JSON.parse(user): null;
 
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");

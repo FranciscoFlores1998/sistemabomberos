@@ -425,7 +425,7 @@ export default function FormVoluntario({
                 </div>
               </div>
               <div className="flex justify-between mt-6">
-                <Button variant="outline" onClick={() => router.back()}>
+                <Button variant="outline" type = "button" onClick={() => router.back()}>
                   Cancelar
                 </Button>
                 <Button

@@ -54,7 +54,7 @@ interface ClaveEmergencia {
 type SortColumn = "folioPEmergencia" | "fechaEmergencia" | "idClaveEmergencia";
 export default function ParteEmergencia() {
   const user = Cookies.get("login");
-  const parseUSer = JSON.parse(user);
+  const parseUSer = user ? JSON.parse(user): null;
 
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");

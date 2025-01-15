@@ -1,21 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  useForm,
-  FormProvider,
-  useFormContext,
-  Controller,
-} from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/datepicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/datepicker";
-import { Checkbox } from "@/components/ui/checkbox";
-import { formatearFecha } from "@/lib/formatearFecha";
-import { format, validate } from "@/lib/formatearRut";
 import {
   Select,
   SelectContent,
@@ -23,18 +13,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { formatearFecha } from "@/lib/formatearFecha";
+import { format, validate } from "@/lib/formatearRut";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import {
+  Controller,
+  useForm
+} from "react-hook-form";
 import { Toaster, toast } from "react-hot-toast";
 import FallbackSpinner from "./ui/spinner";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "./ui/table";
 
 interface Voluntario {
@@ -124,9 +120,8 @@ export default function FormParteEmergencia({
     handleSubmit,
     clearErrors,
     setError,
-    reset,
     control,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = methods;
   const router = useRouter();
 
@@ -215,14 +210,7 @@ export default function FormParteEmergencia({
       toast.error("Hubo un error al conectar con el servidor.");
     }
   };
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).replace(/\//g, '-');
-  };
+  
 
   const handleAddMovil = (movilId: string) => {
     //tiene que agregar al addedMoviles el movil seleccionado y elimiarlo de movilesDisponibles
@@ -408,10 +396,10 @@ export default function FormParteEmergencia({
       setValue("llamarEmpresaQuimica", data.llamarEmpresaQuimica);
       setValue("descripcionMaterialP", data.descripcionMaterialP);
       setValue("direccionEmergencia", data.direccionEmergencia);
-      setValue("oficialCargo", data.idOficial.toString());
+      setValue("oficialCargo",data.idOficial ?  data.idOficial.toString(): "");
 
-      setValue("idClaveEmergencia", data.idClaveEmergencia.toString());
-      setValue("folioPAsistencia", data.folioPAsistencia.toString());
+      setValue("idClaveEmergencia",data.idClaveEmergencia ? data.idClaveEmergencia.toString(): "");
+      setValue("folioPAsistencia",data.folioPAsistencia ? data.folioPAsistencia.toString(): "");
       setDate(new Date(data.fechaEmergencia));
       setValue(
         "idMaterialP",
@@ -1273,4 +1261,3 @@ export default function FormParteEmergencia({
   );
 }
 
-//moviles: addedMoviles.length > 0 ? addedMoviles.map((m) => m.idMovil) : [],
