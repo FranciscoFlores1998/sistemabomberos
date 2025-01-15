@@ -441,7 +441,7 @@ export default function FormParteAsistencia({
                       {oficialCompania.claveRadial} - {oficialCompania.nombreVol} {oficialCompania.apellidop} {oficialCompania.apellidom}
                     </SelectItem>
                   ))}
-                </SelectContent>
+                </SelectContent>|
               </Select>
             </div>
             <div className="flex flex-col gap-y-2 space-y-1.5">
