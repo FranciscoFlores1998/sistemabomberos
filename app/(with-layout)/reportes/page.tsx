@@ -35,6 +35,7 @@ import {
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { addDays, subDays, subMonths, subYears, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
+import FallbackSpinner from "@/components/ui/spinner";
 
 interface SummaryStats {
   totalAsistencias: number;
@@ -106,6 +107,7 @@ export default function ReportesPage() {
   const [toDate, setToDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
+    setLoading(true);
     const fetchData = async () => {
       try {
         const [
@@ -239,7 +241,7 @@ export default function ReportesPage() {
     setToDate(today);
   };
 
-  if (loading) return <p>Cargando datos...</p>;
+  if (loading) return <FallbackSpinner />;
   if (error) return <p className="text-red-500">{error}</p>;
 
   const asistenciaChartData = filteredPartesAsistencia
@@ -289,7 +291,6 @@ export default function ReportesPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Panel de Reportes</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
@@ -307,42 +308,7 @@ export default function ReportesPage() {
           </CardHeader>
         </Card>
       </div>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Resumen General</CardTitle>
-          <CardDescription>
-            Gráfico comparativo de totales actuales
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={[
-                {
-                  totalAsistencias: partesAsistencia.length,
-                  totalEmergencias: partesEmergencia.length,
-                },
-              ]}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar
-                dataKey="totalAsistencias"
-                name="Asistencias"
-                fill="#8884d8"
-              />
-              <Bar
-                dataKey="totalEmergencias"
-                name="Emergencias"
-                fill="#82ca9d"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+
       <Card>
         <CardHeader>
           <div className="mb-6">
@@ -361,18 +327,16 @@ export default function ReportesPage() {
           </div>
         </CardHeader>
         <Tabs defaultValue="asistencia">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="asistencia">Asistencia</TabsTrigger>
             <TabsTrigger value="emergencias">Emergencias</TabsTrigger>
-            <TabsTrigger value="voluntarios">Voluntarios</TabsTrigger>
           </TabsList>
-
           <TabsContent value="asistencia">
             <Card>
               <CardHeader>
                 <CardTitle>Reporte de Partes de Asistencias</CardTitle>
                 <CardDescription>
-                  Resumen detallado de la asistencia del personal
+                  Total de voluntarios asistentes por partes a través de las citaciones
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -405,22 +369,16 @@ export default function ReportesPage() {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="emergencias">
             <Card>
-              <CardHeader>
-                <CardTitle>Reporte de Partes de Emergencias</CardTitle>
-                <CardDescription>
-                  Análisis de las emergencias atendidas
-                </CardDescription>
-              </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>
-                        Distribución de Emergencias por Clave
-                      </CardTitle>
+                      <CardTitle>Grafica por Partes de Emergencias</CardTitle>
+                      <CardDescription>
+                        Distribución por claves de emergencias
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                       {emergenciaChartData.length > 0 ? (
@@ -451,7 +409,6 @@ export default function ReportesPage() {
                       )}
                     </CardContent>
                   </Card>
-
                   <Card>
                     <CardHeader>
                       <CardTitle>Lista de Claves de Emergencias</CardTitle>
@@ -461,14 +418,12 @@ export default function ReportesPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Clave</TableHead>
-                            <TableHead>Nombre</TableHead>
                             <TableHead>Cantidad</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {emergenciaChartData.map((clave, index) => (
                             <TableRow key={index}>
-                              <TableCell>{clave.name}</TableCell>
                               <TableCell>{clave.name}</TableCell>
                               <TableCell>{clave.value}</TableCell>
                             </TableRow>
@@ -481,39 +436,30 @@ export default function ReportesPage() {
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="voluntarios">
-            <Card>
-              <CardHeader>
-                <CardTitle>Reporte de Voluntarios</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Distribución por Compañía</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                      {voluntariosChartData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={voluntariosChartData}>
-                            <XAxis dataKey="compania" />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="cantidad" fill="#8884d8" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <p>No hay datos suficientes para mostrar el gráfico.</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </Card>
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribución de voluntarios por Compañía</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            {voluntariosChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={voluntariosChartData}>
+                  <XAxis dataKey="compania" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="cantidad" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p>No hay datos suficientes para mostrar el gráfico.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
+    
   );
 }

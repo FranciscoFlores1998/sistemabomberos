@@ -18,10 +18,22 @@ import html2canvas from "html2canvas";
 
 interface Oficial {
   idOficial: number;
-  nombreOficial: string;
-  apellidopOficial: string;
-  apellidomOficial: string;
+  nombreVol: string;
+  apellidop: string;
+  apellidom: string;
   claveRadial: string;
+}
+interface Voluntario {
+  idVoluntario: number;
+  nombreVol: string;
+  claveRadial: string;
+  apellidop: string;
+  apellidom: string;
+}
+interface Movil {
+  idMovil: number;
+  nomenclatura: string;
+  especialidad: string;
 }
 
 interface ClaveEmergencia {
@@ -29,6 +41,35 @@ interface ClaveEmergencia {
   nombreClaveEmergencia: string;
 }
 
+interface Inmueble {
+  direccion: String;
+  tipoInmueble: String;
+  estadoInmueble: String;
+}
+
+interface Institucion {
+  nombreInstitucion: String;
+  tipoInstitucion: String;
+  nombrePersonaCargo: String;
+  horaLlegada: String;
+}
+
+interface Vehiculo {
+  idVehiculo: number;
+  marca: String;
+  modelo: String;
+  patente: String;
+  tipoVehiculo: String;
+}
+interface Victima {
+  nombreVictima: String;
+  rutVictima: String;
+  edadVictima: number;
+  descripcion: String;
+}
+interface Material {
+  clasificacion: String;
+}
 interface ParteEmergenciaResponse {
   folioPEmergencia: number;
   horaInicio: string;
@@ -41,6 +82,13 @@ interface ParteEmergenciaResponse {
   oficial: Oficial;
   claveEmergencia: ClaveEmergencia;
   folioPAsistencia: number;
+  materialesP: Material[];
+  voluntarios: Voluntario[];
+  moviles: Movil[];
+  victimas: Victima[];
+  instituciones: Institucion[];
+  inmuebles: Inmueble[];
+  vehiculos: Vehiculo[];
 }
 
 export default function VisualizarParteEmergencia({
@@ -216,7 +264,7 @@ export default function VisualizarParteEmergencia({
                   <h3 className="text-lg font-semibold">
                     Folio Parte Asistencia
                   </h3>
-                  <p>{parteEmergencia.folioPAsistencia}</p>
+                  <p>{parteEmergencia.folioPAsistencia || "No se aplico parte de asistencia" }</p>
                 </div>
               </div>
               <div className="full-width grid grid-cols-3 gap-4 pdf-mode grid three-columns">
@@ -234,36 +282,119 @@ export default function VisualizarParteEmergencia({
                   <p>{parteEmergencia.horaFin}</p>
                 </div>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Oficial a cargo</h3>
                 <p>
                   {parteEmergencia.oficial.claveRadial}{" "}
-                  {parteEmergencia.oficial.nombreOficial}{" "}
-                  {parteEmergencia.oficial.apellidopOficial}{" "}
-                  {parteEmergencia.oficial.apellidomOficial}
+                  {parteEmergencia.oficial.nombreVol}{" "}
+                  {parteEmergencia.oficial.apellidop}{" "}
+                  {parteEmergencia.oficial.apellidom}
                 </p>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Dirección</h3>
                 <p>{parteEmergencia.direccionEmergencia}</p>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Pre-Informe</h3>
                 <p>{parteEmergencia.preInforme || "Sin pre-informe"}</p>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold">
-                  Llamar Empresa Química
-                </h3>
-                <p>{parteEmergencia.llamarEmpresaQuimica ? "Sí" : "No"}</p>
+              <div className="full-width grid grid-cols-3 gap-4 pdf-mode grid three-columns">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    Llamar Empresa Química
+                    
+                  </h3>
+                  <p>{parteEmergencia.llamarEmpresaQuimica ? "Sí" : "No"}</p>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    Descripción  Material Peligroso
+                  </h3>
+                  <p>
+                    {parteEmergencia.descripcionMaterialP || "Sin descripción"}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    Clasificación del Material Peligroso
+                  </h3>
+                  <p>{parteEmergencia.materialesP[0].clasificacion}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold">
-                  Descripción Material Peligroso
-                </h3>
-                <p>
-                  {parteEmergencia.descripcionMaterialP || "Sin descripción"}
-                </p>
+              <div className="full-width pdf-mode grid">
+                <h3 className="text-lg font-semibold">Víctimas</h3>
+                {parteEmergencia.victimas.length > 0 ? (
+                  <ul>
+                    {parteEmergencia.victimas.map((victima, index) => (
+                      <li key={index}>
+                        {victima.nombreVictima} - RUT: {victima.rutVictima} - Edad: {victima.edadVictima} - {victima.descripcion}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No se registraron víctimas</p>
+                )}
+              </div>
+
+              <div className="full-width pdf-mode grid">
+                <h3 className="text-lg font-semibold">Vehículos</h3>
+                {parteEmergencia.vehiculos.length > 0 ? (
+                  <ul>
+                    {parteEmergencia.vehiculos.map((vehiculo, index) => (
+                      <li key={index}>
+                        {vehiculo.marca} {vehiculo.modelo} - Patente: {vehiculo.patente} - Tipo: {vehiculo.tipoVehiculo}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No se registraron vehículos</p>
+                )}
+              </div>
+
+              <div className="full-width pdf-mode grid">
+                <h3 className="text-lg font-semibold">Instituciones</h3>
+                {parteEmergencia.instituciones.length > 0 ? (
+                  <ul>
+                    {parteEmergencia.instituciones.map((institucion, index) => (
+                      <li key={index}>
+                        {institucion.nombreInstitucion} - Tipo: {institucion.tipoInstitucion} - Persona a cargo: {institucion.nombrePersonaCargo} - Hora de llegada: {institucion.horaLlegada}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No se registraron instituciones</p>
+                )}
+              </div>
+
+              <div className="full-width pdf-mode grid">
+                <h3 className="text-lg font-semibold">Móviles</h3>
+                {parteEmergencia.moviles.length > 0 ? (
+                  <ul>
+                    {parteEmergencia.moviles.map((movil, index) => (
+                      <li key={index}>
+                        {movil.nomenclatura} - Especialidad: {movil.especialidad}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No se registraron móviles</p>
+                )}
+              </div>
+
+              <div className="full-width pdf-mode grid">
+                <h3 className="text-lg font-semibold">Voluntarios</h3>
+                {parteEmergencia.voluntarios.length > 0 ? (
+                  <ul>
+                    {parteEmergencia.voluntarios.map((voluntario, index) => (
+                      <li key={index}>
+                        {voluntario.claveRadial} - {voluntario.nombreVol} {voluntario.apellidop} {voluntario.apellidom}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No se registraron voluntarios</p>
+                )}
               </div>
             </div>
           </CardContent>

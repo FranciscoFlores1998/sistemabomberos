@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { format, isAfter } from "date-fns"
+import { es } from 'date-fns/locale'
 import { CalendarIcon } from 'lucide-react'
 
 import { cn } from "@/lib/utils"
@@ -30,6 +31,11 @@ export function DatePickerWithRange({
 }: DatePickerWithRangeProps) {
   const today = new Date()
 
+  const formatDate = (date: Date | undefined) => {
+    if (!date) return ""
+    return format(date, "dd/MM/yyyy", { locale: es })
+  }
+
   return (
     <div className={cn("flex flex-col space-y-2", className)}>
       <div className="flex items-center space-x-2">
@@ -47,7 +53,7 @@ export function DatePickerWithRange({
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {fromDate ? format(fromDate, "PPP") : <span>Seleccionar fecha</span>}
+              {fromDate ? formatDate(fromDate) : <span>Seleccionar fecha</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -61,6 +67,7 @@ export function DatePickerWithRange({
               }}
               disabled={(date) => isAfter(date, toDate || today)}
               initialFocus
+              locale={es}
             />
           </PopoverContent>
         </Popover>
@@ -78,7 +85,7 @@ export function DatePickerWithRange({
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {toDate ? format(toDate, "PPP") : <span>Seleccionar fecha</span>}
+              {toDate ? formatDate(toDate) : <span>Seleccionar fecha</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -92,6 +99,7 @@ export function DatePickerWithRange({
               }}
               disabled={(date) => isAfter(date, today) || (fromDate && isAfter(fromDate, date))}
               initialFocus
+              locale={es}
             />
           </PopoverContent>
         </Popover>
