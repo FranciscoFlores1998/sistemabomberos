@@ -32,7 +32,7 @@ export default function Header() {
           </li>
           <li>
             <Link href="/reportes" className="hover:underline">
-              Reportes
+              Gráficas
             </Link>
           </li>
           {parseUSer.cargo.idCargo === 1 && (
