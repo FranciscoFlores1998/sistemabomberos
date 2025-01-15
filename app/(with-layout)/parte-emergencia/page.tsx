@@ -102,6 +102,14 @@ export default function ParteEmergencia() {
     }
   };
 
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).replace(/\//g, '-');
+  };
   const fetchClaveEmergencia = async () => {
     try {
       const response = await fetch(
@@ -316,7 +324,7 @@ export default function ParteEmergencia() {
                           )?.nombreClaveEmergencia
                         }
                       </TableCell>
-                      <TableCell>{parte.fechaEmergencia}</TableCell>
+                      <TableCell>{formatDate(parte.fechaEmergencia)}</TableCell>
                       <TableCell>{parte.direccionEmergencia}</TableCell>
                       <TableCell>
                         {

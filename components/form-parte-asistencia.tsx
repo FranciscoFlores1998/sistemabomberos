@@ -24,6 +24,8 @@ interface Voluntario {
   idVoluntario: number;
   nombreVol: string;
   claveRadial: string;
+  apellidop: string;
+  apellidom: string;
 }
 
 interface TipoCitacion {
@@ -103,6 +105,7 @@ export default function FormParteAsistencia({
 
       if (response.ok) {
         const data = await response.json();
+        console.log("data", data);
         return data;
       } else {
         throw new Error("Error al obtener datos");
@@ -406,7 +409,7 @@ export default function FormParteAsistencia({
                       key={oficialCargo.idVoluntario}
                       value={oficialCargo.idVoluntario.toString()}
                     >
-                      {oficialCargo.nombreVol}
+                     {oficialCargo.claveRadial} - {oficialCargo.nombreVol} {oficialCargo.apellidop} {oficialCargo.apellidom}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -435,7 +438,7 @@ export default function FormParteAsistencia({
                       key={oficialCompania.idVoluntario}
                       value={oficialCompania.idVoluntario.toString()}
                     >
-                      {oficialCompania.nombreVol}
+                      {oficialCompania.claveRadial} - {oficialCompania.nombreVol} {oficialCompania.apellidop} {oficialCompania.apellidom}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -448,6 +451,8 @@ export default function FormParteAsistencia({
             <div className="flex flex-col gap-y-2 space-y-1.5">
               <Label htmlFor="totalAsistencia">Total Asistencia</Label>
               <Input
+                //solo numeros
+                type="number"
                 id="totalAsistencia"
                 {...register("totalAsistencia", { required: true })}
                 className={errors.totalAsistencia ? "border-red-500" : ""}
@@ -545,7 +550,7 @@ export default function FormParteAsistencia({
                           key={voluntario.idVoluntario}
                           value={voluntario.idVoluntario.toString()}
                         >
-                          {voluntario.claveRadial} - {voluntario.nombreVol}
+                          {voluntario.claveRadial} - {voluntario.apellidop}  {voluntario.apellidom}  {voluntario.nombreVol} 
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -562,7 +567,7 @@ export default function FormParteAsistencia({
                         className="flex items-center gap-4 py-1"
                       >
                         <div>
-                          {voluntario.claveRadial} - {voluntario.nombreVol}
+                          {voluntario.claveRadial} - {voluntario.apellidop}  {voluntario.apellidom}  {voluntario.nombreVol}
                         </div>
                         <div>
                           <Button

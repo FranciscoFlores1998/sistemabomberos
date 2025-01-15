@@ -101,6 +101,15 @@ export default function ParteAsistencia() {
       setLoading(false);
     }
   };
+  
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).replace(/\//g, '-');
+  };
 
   const fetchTipoLlamado = async () => {
     try {
@@ -323,7 +332,7 @@ export default function ParteAsistencia() {
                           )?.nombreVol
                         }
                       </TableCell>
-                      <TableCell>{parte.fechaAsistencia}</TableCell>
+                      <TableCell>{formatDate(parte.fechaAsistencia)}</TableCell>
                       <TableCell>{parte.horaInicio}</TableCell>
                       <TableCell>{parte.horaFin}</TableCell>
                       <TableCell>{parte.direccionAsistencia}</TableCell>

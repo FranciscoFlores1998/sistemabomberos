@@ -41,6 +41,8 @@ interface Voluntario {
   idVoluntario: number;
   nombreVol: string;
   claveRadial: string;
+  apellidop: string;
+  apellidom: string;
 }
 
 interface Movil {
@@ -63,6 +65,8 @@ interface ParteAsistencia {
   folioPAsistencia: number;
   observaciones: string;
 }
+
+
 
 export default function FormParteEmergencia({
   params,
@@ -210,6 +214,14 @@ export default function FormParteEmergencia({
       console.error("Error al obtener datos:", error);
       toast.error("Hubo un error al conectar con el servidor.");
     }
+  };
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).replace(/\//g, '-');
   };
 
   const handleAddMovil = (movilId: string) => {
@@ -362,6 +374,7 @@ export default function FormParteEmergencia({
     setLoading(true);
     setValue("fechaEmergencia", formatearFecha(new Date().toISOString()));
     const voluntariosData = await getVoluntarios();
+    const oficialData = await getVoluntarios();
     const movilesData = await getMoviles();
     const partesAsistenciaData = await getPartesAsistencia();
     const materialesPeligrososData = await getMaterialPeligroso();
@@ -414,6 +427,7 @@ export default function FormParteEmergencia({
       const movilesData = await getMoviles();
       const partesAsistenciaData = await getPartesAsistencia();
       const materialesPeligrososData = await getMaterialPeligroso();
+      const oficialData = await getVoluntarios();
       const clavesEmergenciaData = await getClavesEmergencia();
       setOficialParteEmergencia(voluntariosData);
       setClavesEmergencia(await getClavesEmergencia());
@@ -610,7 +624,7 @@ export default function FormParteEmergencia({
                       key={oficialCargo.idVoluntario}
                       value={oficialCargo.idVoluntario.toString()}
                     >
-                      {oficialCargo.claveRadial} - {oficialCargo.nombreVol}
+                      {oficialCargo.claveRadial} - {oficialCargo.apellidop} {oficialCargo.apellidom} {oficialCargo.nombreVol}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -831,7 +845,7 @@ export default function FormParteEmergencia({
                         key={voluntario.idVoluntario}
                         value={voluntario.idVoluntario.toString()}
                       >
-                        {voluntario.claveRadial} - {voluntario.nombreVol}
+                        {voluntario.claveRadial} - {voluntario.apellidop} {voluntario.apellidom} {voluntario.nombreVol}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -848,7 +862,7 @@ export default function FormParteEmergencia({
                       className="flex items-center gap-4 py-1"
                     >
                       <div>
-                        {voluntario.claveRadial} - {voluntario.nombreVol}
+                      {voluntario.claveRadial} - {voluntario.apellidop} {voluntario.apellidom} {voluntario.nombreVol}
                       </div>
                       <div>
                         <Button
@@ -1068,6 +1082,8 @@ export default function FormParteEmergencia({
                     <div className="flex flex-col space-y-2">
                       <Label htmlFor="vehiculoPatente">Patente</Label>
                       <Input
+                      //limitar a 6 caracteres 
+                        maxLength={6}
                         id="vehiculoPatente"
                         {...register("vehiculoPatente")}
                         placeholder="Ingrese patente"
