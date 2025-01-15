@@ -336,7 +336,7 @@ export default function ReportesPage() {
               <CardHeader>
                 <CardTitle>Reporte de Partes de Asistencias</CardTitle>
                 <CardDescription>
-                  Total de asistentes por partes a través del tiempo
+                  Total de voluntarios asistentes por partes a través de las citaciones
                 </CardDescription>
               </CardHeader>
               <CardContent>
