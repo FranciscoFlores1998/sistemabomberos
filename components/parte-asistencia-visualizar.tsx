@@ -183,9 +183,17 @@ export default function VisualizarParteAsistencia({
         }
         .pdf-mode .grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
           gap: 16px;
         }
+
+        .pdf-mode .grid.two-columns {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .pdf-mode .grid.three-columns {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
         .pdf-mode .grid > div {
           border: 1px solid #d1d1d1;
           border-radius: 4px;
@@ -211,11 +219,11 @@ export default function VisualizarParteAsistencia({
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Tipo de Citación</h3>
                 <p>{parteAsistencia.tipoLlamado.nombreTipoLlamado}</p>
               </div>
-              <div className="full-width grid grid-cols-3 gap-4">
+              <div className="full-width grid grid-cols-3 gap-4 pdf-mode grid three-columns">
                 <div>
                   <h3 className="text-lg font-semibold">Fecha</h3>
                   <p>{formatearFecha(parteAsistencia.fechaAsistencia)}</p>
@@ -229,7 +237,7 @@ export default function VisualizarParteAsistencia({
                   <p>{parteAsistencia.horaFin}</p>
                 </div>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">
                   Oficial a cargo del cuerpo
                 </h3>
@@ -240,7 +248,7 @@ export default function VisualizarParteAsistencia({
                   {parteAsistencia.encargadoCuerpo.apellidom}
                 </p>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Oficial Compañía</h3>
                 <p>
                   {parteAsistencia.encargadoCompania.claveRadial}{" "}
@@ -249,15 +257,15 @@ export default function VisualizarParteAsistencia({
                   {parteAsistencia.encargadoCompania.apellidom}
                 </p>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Dirección</h3>
                 <p>{parteAsistencia.direccionAsistencia}</p>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Observaciones</h3>
                 <p>{parteAsistencia.observaciones || "Sin observaciones"}</p>
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Móviles</h3>
                 {parteAsistencia.moviles &&
                 parteAsistencia.moviles.length > 0 ? (
@@ -274,7 +282,7 @@ export default function VisualizarParteAsistencia({
                   </p>
                 )}
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Voluntarios</h3>
                 {parteAsistencia.voluntarios &&
                 parteAsistencia.voluntarios.length > 0 ? (
@@ -292,7 +300,7 @@ export default function VisualizarParteAsistencia({
                   </p>
                 )}
               </div>
-              <div className="full-width">
+              <div className="full-width pdf-mode grid">
                 <h3 className="text-lg font-semibold">Total Asistencia</h3>
                 <p>{parteAsistencia.totalAsistencia}</p>
               </div>
