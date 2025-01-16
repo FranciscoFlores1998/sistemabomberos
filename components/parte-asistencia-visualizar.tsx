@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import FallbackSpinner from "@/components/ui/spinner";
-import { formatearFecha } from "@/lib/formatearFecha";
 import { Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -145,7 +144,14 @@ export default function VisualizarParteAsistencia({
   if (!parteAsistencia) {
     return <div>No se encontró el parte de asistencia.</div>;
   }
-
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).replace(/\//g, '-');
+  };
   return (
     <div className="container mx-auto py-10">
       <style jsx global>{`
@@ -226,7 +232,7 @@ export default function VisualizarParteAsistencia({
               <div className="full-width grid grid-cols-3 gap-4 pdf-mode grid three-columns">
                 <div>
                   <h3 className="text-lg font-semibold">Fecha</h3>
-                  <p>{formatearFecha(parteAsistencia.fechaAsistencia)}</p>
+                  <p>{formatDate(parteAsistencia.fechaAsistencia)}</p>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Hora de Inicio</h3>

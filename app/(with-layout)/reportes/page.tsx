@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -61,8 +61,8 @@ interface ParteEmergencia {
 }
 
 interface TipoCitacion {
-  idTipoCitacion: number;
-  nombreTipoCitacion: string;
+  idTipoLlamado: number;
+  nombreTipoLlamado: string;
 }
 
 interface ClaveEmergencia {
@@ -105,72 +105,48 @@ export default function ReportesPage() {
     subMonths(new Date(), 1)
   );
   const [toDate, setToDate] = useState<Date | undefined>(new Date());
+  const [selectedTipoLlamado, setSelectedTipoLlamado] = useState<string | null>(
+    "1ra Alarma de Incendio"
+  );
 
   useEffect(() => {
     setLoading(true);
     const fetchData = async () => {
       try {
-        const [
-          asistenciaResponse,
-          emergenciaResponse,
-          clavesResponse,
-          voluntariosResponse,
-          tipoCitacionResponse,
-        ] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/obtener`, {
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/obtener`, {
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/claveEmergencia/obtener`, {
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
-            headers: {
-              "Content-Type": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }),
-        ]);
-
+        const [clavesResponse, voluntariosResponse, tipoCitacionResponse] =
+          await Promise.all([
+            fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/claveEmergencia/obtener`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  "ngrok-skip-browser-warning": "true",
+                },
+              }
+            ),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/voluntario/obtener`, {
+              headers: {
+                "Content-Type": "application/json",
+                "ngrok-skip-browser-warning": "true",
+              },
+            }),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/tipo-citacion/obtener`, {
+              headers: {
+                "Content-Type": "application/json",
+                "ngrok-skip-browser-warning": "true",
+              },
+            }),
+          ]);
         if (
-          !asistenciaResponse.ok ||
-          !emergenciaResponse.ok ||
           !clavesResponse.ok ||
           !voluntariosResponse.ok ||
           !tipoCitacionResponse.ok
         ) {
           throw new Error("Failed to fetch data");
         }
-
-        const asistenciaData = await asistenciaResponse.json();
-        const emergenciaData = await emergenciaResponse.json();
         const clavesData = await clavesResponse.json();
         const voluntariosData = await voluntariosResponse.json();
         const tipoCitacionData = await tipoCitacionResponse.json();
-
-        const parsedAsistenciaData = Array.isArray(asistenciaData)
-          ? asistenciaData
-          : [];
-        const parsedEmergenciaData = Array.isArray(emergenciaData)
-          ? emergenciaData
-          : [];
         const parsedClavesData = Array.isArray(clavesData) ? clavesData : [];
         const parsedVoluntariosData = Array.isArray(voluntariosData)
           ? voluntariosData
@@ -178,16 +154,13 @@ export default function ReportesPage() {
         const parsedTipoCitacionData = Array.isArray(tipoCitacionData)
           ? tipoCitacionData
           : [];
-
-        setPartesAsistencia(parsedAsistenciaData);
-        setPartesEmergencia(parsedEmergenciaData);
+        console.log(parsedTipoCitacionData);
         setClavesEmergencia(parsedClavesData);
         setVoluntarios(parsedVoluntariosData);
         setTipoCitacion(parsedTipoCitacionData);
-
         setSummaryStats({
-          totalAsistencias: parsedAsistenciaData.length,
-          totalEmergencias: parsedEmergenciaData.length,
+          totalAsistencias: 0, // Will be updated by the filtered fetch
+          totalEmergencias: 0, // Will be updated by the filtered fetch
           totalVoluntarios: parsedVoluntariosData.length,
           totalCitaciones: parsedTipoCitacionData.length,
         });
@@ -198,14 +171,66 @@ export default function ReportesPage() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
+
+  const createDateRangeQueryString = (
+    fromDate: Date | null,
+    toDate: Date | null
+  ): string => {
+    const formatDate = (date: Date): string => {
+      return date.toISOString().split("T")[0]; // This gives us 'yyyy-mm-dd'
+    };
+
+    let queryString = "";
+
+    if (fromDate) {
+      queryString += `fechaInicio=${formatDate(fromDate)}`;
+    }
+
+    if (toDate) {
+      if (queryString) queryString += "&";
+      queryString += `fechaFin=${formatDate(toDate)}`;
+    }
+
+    return queryString;
+  };
+
+  const createApiUrl = (
+    baseUrl: string,
+    fromDate: Date | null,
+    toDate: Date | null,
+    tipoLlamado: string | null
+  ) => {
+    const dateRangeQuery = createDateRangeQueryString(fromDate, toDate);
+    if (selectedTipoLlamado != null) {
+      tipoLlamado = `&tipoLlamado=${selectedTipoLlamado}`;
+    } else {
+      tipoLlamado = "";
+    }
+
+    const tipoLlamadoQuery = tipoLlamado;
+    // if
+    return `${baseUrl}?${dateRangeQuery}${tipoLlamadoQuery}`;
+  };
+  const createApiUrlEmergencia = (
+    baseUrl: string,
+    fromDate: Date | null,
+    toDate: Date | null
+  ) => {
+    const dateRangeQuery = createDateRangeQueryString(fromDate, toDate);
+    return `${baseUrl}?${dateRangeQuery}`;
+  };
 
   const filterDataByDateRange = (
     data: ParteAsistencia[] | ParteEmergencia[],
     dateField: "fechaAsistencia" | "fechaEmergencia"
   ) => {
+    const queryString = createDateRangeQueryString(
+      fromDate || null,
+      toDate || null
+    );
+
     return data.filter((item) => {
       const itemDate = new Date(item[dateField]);
       return (
@@ -241,13 +266,87 @@ export default function ReportesPage() {
     setToDate(today);
   };
 
+  useEffect(() => {
+    const fetchDataByTipoLlamado = async () => {
+      setLoading(true);
+      try {
+        const asistenciaUrl = createApiUrl(
+          `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/fechas-tipo`,
+          fromDate || null,
+          toDate || null,
+          selectedTipoLlamado
+        );
+        const response = await fetch(asistenciaUrl, {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch data");
+        }
+        const data = await response.json();
+        console.log(data);
+        setPartesAsistencia(Array.isArray(data) ? data : []);
+        setSummaryStats((prevStats) => ({
+          ...prevStats,
+          totalAsistencias: Array.isArray(data) ? data.length : 0,
+        }));
+      } catch (err) {
+        setError("Error fetching data");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDataByTipoLlamado();
+  }, [fromDate, toDate, selectedTipoLlamado]);
+
+  useEffect(() => {
+    const fetchEmergenciaData = async () => {
+      setLoading(true);
+      try {
+        const emergenciaUrl = createApiUrlEmergencia(
+          `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/fechas-simple`,
+          fromDate || null,
+          toDate || null
+        );
+        const response = await fetch(emergenciaUrl, {
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch emergencia data");
+        }
+        const data = await response.json();
+        setPartesEmergencia(Array.isArray(data) ? data : []);
+        setSummaryStats((prevStats) => ({
+          ...prevStats,
+          totalEmergencias: Array.isArray(data) ? data.length : 0,
+        }));
+      } catch (err) {
+        setError("Error fetching emergencia data");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmergenciaData();
+  }, [fromDate, toDate]);
+
+  const tipoLlamadoColors = useMemo(() => {
+    const uniqueTipos = [...new Set(filteredPartesAsistencia.map(parte => parte.nombreTipoLlamado))];
+    return Object.fromEntries(uniqueTipos.map((tipo, index) => [tipo, COLORS[index % COLORS.length]]));
+  }, [filteredPartesAsistencia])
+  
   if (loading) return <FallbackSpinner />;
   if (error) return <p className="text-red-500">{error}</p>;
 
   const asistenciaChartData = filteredPartesAsistencia
-    .filter(
-      (parte) => parte.fechaAsistencia && parte.totalAsistencia !== undefined
-    )
     .sort(
       (a, b) =>
         new Date(a.fechaAsistencia).getTime() -
@@ -255,8 +354,12 @@ export default function ReportesPage() {
     )
     .slice(-10)
     .map((parte) => ({
-      fecha: parte.fechaAsistencia,
+      folio: parte.folioPAsistencia,
       asistencia: parte.totalAsistencia,
+      fecha: new Date(parte.fechaAsistencia).toLocaleDateString(),
+      tipoLlamado:
+        tipoCitacion.find((tipo) => tipo.idTipoLlamado === parte.idTipoLlamado)
+          ?.nombreTipoLlamado || "Desconocido",
     }));
 
   const emergenciasPorClave = filteredPartesEmergencia.reduce((acc, parte) => {
@@ -291,7 +394,6 @@ export default function ReportesPage() {
 
   return (
     <div className="container mx-auto py-10">
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardHeader>
@@ -320,6 +422,22 @@ export default function ReportesPage() {
                 onFromChange={setFromDate}
                 onToChange={setToDate}
               />
+
+              <select
+                value={selectedTipoLlamado?.toString() || ""}
+                onChange={(e) => setSelectedTipoLlamado(e.target.value || null)}
+                className="border-2 mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              >
+                <option value="">Todos los tipos de llamado</option>
+                {tipoCitacion.map((tipo) => (
+                  <option
+                    key={tipo.nombreTipoLlamado}
+                    value={tipo.nombreTipoLlamado}
+                  >
+                    {tipo.nombreTipoLlamado}
+                  </option>
+                ))}
+              </select>
               <Button onClick={setLastWeek}>Última semana</Button>
               <Button onClick={setLastMonth}>Último mes</Button>
               <Button onClick={setLastYear}>Último año</Button>
@@ -336,29 +454,77 @@ export default function ReportesPage() {
               <CardHeader>
                 <CardTitle>Reporte de Partes de Asistencias</CardTitle>
                 <CardDescription>
-                  Total de voluntarios asistentes por partes a través de las citaciones
+                  Total de voluntarios asistentes por partes a través de las
+                  citaciones
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Tendencia de Asistencia</CardTitle>
+                      <CardTitle>Asistencia por Folio</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardContent className="h-[400px]">
                       {asistenciaChartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={asistenciaChartData}>
-                            <XAxis dataKey="fecha" />
-                            <YAxis />
-                            <Tooltip />
-                            <Line
-                              type="monotone"
-                              dataKey="asistencia"
-                              stroke="#8884d8"
-                              strokeWidth={2}
+                          <BarChart data={asistenciaChartData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="folio"
+                              label={{
+                                value: "Folio de asistencias",
+                                position: "insideBottom",
+                                offset: -10,
+                              }}
                             />
-                          </LineChart>
+                            <YAxis
+                              label={{
+                                value: "Total Asistencia",
+                                angle: -90,
+                                position: "insideLeft",
+                              }}
+                            />
+                            <Tooltip
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  return (
+                                    <div className="bg-white p-2 border border-gray-300 rounded shadow-md">
+                                      <p className="font-bold">
+                                        Fecha: {label}
+                                      </p>
+                                      <p>Folio: {payload[0].payload.folio}</p>
+                                      <p>Asistencia: {payload[0].value}</p>
+                                      <p>
+                                        Tipo: {payload[0].payload.tipoLlamado}
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Legend />
+                            <Bar
+                              dataKey="asistencia"
+                              fill="#8884d8"
+                              name={
+                                tipoCitacion
+                                  ? tipoCitacion.find(
+                                      (tipo) =>
+                                        tipo.nombreTipoLlamado ===
+                                        selectedTipoLlamado?.nombreTipoLlamado
+                                    )?.nombreTipoLlamado
+                                  : "Todos los tipos"
+                              }
+                            >
+                              {asistenciaChartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Bar>
+                          </BarChart>
                         </ResponsiveContainer>
                       ) : (
                         <p>No hay datos suficientes para mostrar el gráfico.</p>
@@ -369,6 +535,7 @@ export default function ReportesPage() {
               </CardContent>
             </Card>
           </TabsContent>
+          
           <TabsContent value="emergencias">
             <Card>
               <CardContent>
@@ -460,6 +627,5 @@ export default function ReportesPage() {
         </Card>
       </div>
     </div>
-    
   );
 }
