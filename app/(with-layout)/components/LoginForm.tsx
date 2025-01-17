@@ -1,13 +1,14 @@
 'use client'
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import cookie from "js-cookie";
 import { useRouter } from "next/navigation";
 import { getUserFromCookie } from "@/utils/auth";
+import { EvervaultCard, Icon } from "@/components/ui/evervault-card";
 
 export default function LoginForm() {
   const [username, setUsername] = useState("");
@@ -48,38 +49,49 @@ export default function LoginForm() {
   };
 
   return (
-    <Card className="w-[350px]">
+    <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Iniciar sesión</CardTitle>
+        <CardTitle className="text-center">Iniciar sesión</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit}>
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="username">Usuario</Label>
-              <Input
-                id="username"
-                placeholder="Ingrese su usuario"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Ingrese su contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+      <CardContent className="space-y-6">
+        <div className=" flex flex-col items-center p-4 relative h-[20rem] rounded-lg">
+        {/* border border-black/[0.2] dark:border-white/[0.2] */}
+          {/* <Icon className="absolute h-6 w-6 -top-3 -left-3 dark:text-white text-black" />
+          <Icon className="absolute h-6 w-6 -bottom-3 -left-3 dark:text-white text-black" />
+          <Icon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black" />
+          <Icon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black" /> */}
+
+          <EvervaultCard imageSrc="/logo/image.png" />
+
+          
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username">Usuario</Label>
+            <Input
+              id="username"
+              placeholder="Ingrese su usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Ingrese su contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
         </form>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline">Cancelar</Button>
-        <Button onClick={handleSubmit}>Ingresar</Button>
+        {/* //centrar boton a la derecha */}
+        <Button type="submit" onClick={handleSubmit} className="w-full">
+          Iniciar sesión
+        </Button>
       </CardFooter>
     </Card>
   );
