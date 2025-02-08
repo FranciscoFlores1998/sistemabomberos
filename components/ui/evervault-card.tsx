@@ -113,6 +113,8 @@ import React, { useState, useEffect } from "react";
 import { useMotionTemplate, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import logo from "@/public/logo/logo.png";
+
 
 export const EvervaultCard = ({
   imageSrc,
@@ -161,7 +163,7 @@ export const EvervaultCard = ({
             <div className="absolute w-full h-full bg-white/[0.8] dark:bg-black/[0.8] blur-sm rounded-full" />
             <div className="z-20 relative w-32 h-32">
               <Image
-                src={imageSrc || "/placeholder.svg"}
+                src={logo || "/placeholder.svg"}
                 alt="Logo"
                 layout="fill"
                 objectFit="contain"

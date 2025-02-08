@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import FallbackSpinner from "@/components/ui/spinner";
-import { Download } from 'lucide-react';
+import { Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Image from "next/image";
@@ -37,25 +37,21 @@ interface Movil {
   nomenclatura: string;
   especialidad: string;
 }
-
 interface ClaveEmergencia {
   idClaveEmergencia: number;
   nombreClaveEmergencia: string;
 }
-
 interface Inmueble {
   direccion: String;
   tipoInmueble: String;
   estadoInmueble: String;
 }
-
 interface Institucion {
   nombreInstitucion: String;
   tipoInstitucion: String;
   nombrePersonaCargo: String;
   horaLlegada: String;
 }
-
 interface Vehiculo {
   idVehiculo: number;
   marca: String;
@@ -145,7 +141,7 @@ export default function VisualizarParteEmergencia({
       logging: false,
       useCORS: true,
       backgroundColor: "#ffffff",
-      width:1100,
+      width: 1100,
     });
 
     element.classList.remove("pdf-mode");
@@ -161,8 +157,8 @@ export default function VisualizarParteEmergencia({
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
     const margin = 35;
-    
-    const imgWidth = pdfWidth - (2*margin);
+
+    const imgWidth = pdfWidth - 2 * margin;
     const imgHeight = canvas.height;
 
     const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
@@ -182,8 +178,13 @@ export default function VisualizarParteEmergencia({
         pdfWidth,
         imgHeight * ratio
       );
-            pdf.setFontSize(10);
-      pdf.text(`Página ${page + 1} de ${totalPages}`, pdfWidth / 2, pdfHeight - 5, { align: 'left' });
+      pdf.setFontSize(10);
+      pdf.text(
+        `Página ${page + 1} de ${totalPages}`,
+        pdfWidth / 2,
+        pdfHeight - 5,
+        { align: "left" }
+      );
     }
     pdf.save(`parte-emergencia-${folio}.pdf`);
   };
@@ -197,11 +198,13 @@ export default function VisualizarParteEmergencia({
   }
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).replace(/\//g, '-');
+    return date
+      .toLocaleDateString("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+      .replace(/\//g, "-");
   };
 
   return (
@@ -278,28 +281,27 @@ export default function VisualizarParteEmergencia({
       `}</style>
       <Card className="w-full max-w-3xl mx-auto">
         <div id="pdf-content" className="p-6">
-            <div className="header">
+          <div className="header">
             <div className="flex justify-between items-center w-full">
               <Image
-              src={logo || "/placeholder.svg"}
-              alt="Logo de la organización"
-              width={100}
-              height={170}
-              className="logo1"
+                src={logo || "/placeholder.svg"}
+                alt="Logo de la organización"
+                width={100}
+                height={170}
+                className="logo1"
               />
+              <h1>Parte de Emergencia número {folio}</h1>
               <Image
-              src={logoC || "/placeholder.svg"}
-              alt="Logo de la organización"
-              width={130}
-              height={130}
-              className="logo2"
+                src={logoC || "/placeholder.svg"}
+                alt="Logo de la organización"
+                width={130}
+                height={130}
+                className="logo2"
               />
             </div>
-            </div>
+          </div>
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-center">
-              Parte de Asistencia número {folio}
-            </CardTitle>
+            <CardTitle className="text-2xl font-bold text-center"></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
@@ -312,7 +314,10 @@ export default function VisualizarParteEmergencia({
                   <h3 className="text-lg font-semibold">
                     Folio Parte Asistencia
                   </h3>
-                  <p>{parteEmergencia.folioPAsistencia || "No se aplico parte de asistencia" }</p>
+                  <p>
+                    {parteEmergencia.folioPAsistencia ||
+                      "No se aplico parte de asistencia"}
+                  </p>
                 </div>
               </div>
               <div className="full-width grid grid-cols-3 gap-4 pdf-mode grid three-columns">
@@ -350,13 +355,12 @@ export default function VisualizarParteEmergencia({
                 <div>
                   <h3 className="text-lg font-semibold">
                     Llamar Empresa Química
-                    
                   </h3>
                   <p>{parteEmergencia.llamarEmpresaQuimica ? "Sí" : "No"}</p>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">
-                    Descripción  Material Peligroso
+                    Descripción Material Peligroso
                   </h3>
                   <p>
                     {parteEmergencia.descripcionMaterialP || "Sin descripción"}
@@ -366,7 +370,11 @@ export default function VisualizarParteEmergencia({
                   <h3 className="text-lg font-semibold">
                     Clasificación del Material Peligroso
                   </h3>
-                  <p>{parteEmergencia.materialesP.length > 0 ? parteEmergencia.materialesP[0].clasificacion :""}</p>
+                  <p>
+                    {parteEmergencia.materialesP.length > 0
+                      ? parteEmergencia.materialesP[0].clasificacion
+                      : ""}
+                  </p>
                 </div>
               </div>
               <div className="full-width pdf-mode grid">
@@ -375,7 +383,8 @@ export default function VisualizarParteEmergencia({
                   <ul>
                     {parteEmergencia.victimas.map((victima, index) => (
                       <li key={index}>
-                        {victima.nombreVictima} - RUT: {victima.rutVictima} - Edad: {victima.edadVictima} - {victima.descripcion}
+                        {victima.nombreVictima} - RUT: {victima.rutVictima} -
+                        Edad: {victima.edadVictima} - {victima.descripcion}
                       </li>
                     ))}
                   </ul>
@@ -390,7 +399,8 @@ export default function VisualizarParteEmergencia({
                   <ul>
                     {parteEmergencia.vehiculos.map((vehiculo, index) => (
                       <li key={index}>
-                        {vehiculo.marca} {vehiculo.modelo} - Patente: {vehiculo.patente} - Tipo: {vehiculo.tipoVehiculo}
+                        {vehiculo.marca} {vehiculo.modelo} - Patente:{" "}
+                        {vehiculo.patente} - Tipo: {vehiculo.tipoVehiculo}
                       </li>
                     ))}
                   </ul>
@@ -405,7 +415,10 @@ export default function VisualizarParteEmergencia({
                   <ul>
                     {parteEmergencia.instituciones.map((institucion, index) => (
                       <li key={index}>
-                        {institucion.nombreInstitucion} - Tipo: {institucion.tipoInstitucion} - Persona a cargo: {institucion.nombrePersonaCargo} - Hora de llegada: {institucion.horaLlegada}
+                        {institucion.nombreInstitucion} - Tipo:{" "}
+                        {institucion.tipoInstitucion} - Persona a cargo:{" "}
+                        {institucion.nombrePersonaCargo} - Hora de llegada:{" "}
+                        {institucion.horaLlegada}
                       </li>
                     ))}
                   </ul>
@@ -420,7 +433,8 @@ export default function VisualizarParteEmergencia({
                   <ul>
                     {parteEmergencia.moviles.map((movil, index) => (
                       <li key={index}>
-                        {movil.nomenclatura} - Especialidad: {movil.especialidad}
+                        {movil.nomenclatura} - Especialidad:{" "}
+                        {movil.especialidad}
                       </li>
                     ))}
                   </ul>
@@ -435,7 +449,8 @@ export default function VisualizarParteEmergencia({
                   <ul>
                     {parteEmergencia.voluntarios.map((voluntario, index) => (
                       <li key={index}>
-                        {voluntario.claveRadial} - {voluntario.nombreVol} {voluntario.apellidop} {voluntario.apellidom}
+                        {voluntario.claveRadial} - {voluntario.nombreVol}{" "}
+                        {voluntario.apellidop} {voluntario.apellidom}
                       </li>
                     ))}
                   </ul>
@@ -462,4 +477,3 @@ export default function VisualizarParteEmergencia({
     </div>
   );
 }
-

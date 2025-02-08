@@ -106,7 +106,7 @@ export default function ReportesPage() {
   );
   const [toDate, setToDate] = useState<Date | undefined>(new Date());
   const [selectedTipoLlamado, setSelectedTipoLlamado] = useState<string | null>(
-    "1ra Alarma de Incendio"
+    ""
   );
 
   useEffect(() => {
@@ -268,7 +268,7 @@ export default function ReportesPage() {
 
   useEffect(() => {
     const fetchDataByTipoLlamado = async () => {
-      setLoading(true);
+      
       try {
         const asistenciaUrl = createApiUrl(
           `${process.env.NEXT_PUBLIC_API_URL}/parte-asistencia/fechas-tipo`,
@@ -305,7 +305,6 @@ export default function ReportesPage() {
 
   useEffect(() => {
     const fetchEmergenciaData = async () => {
-      setLoading(true);
       try {
         const emergenciaUrl = createApiUrlEmergencia(
           `${process.env.NEXT_PUBLIC_API_URL}/parte-emergencia/fechas-simple`,

@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { getUserFromCookie } from "@/utils/auth";
 import { EvervaultCard, Icon } from "@/components/ui/evervault-card";
 
+
 export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +62,7 @@ export default function LoginForm() {
           <Icon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black" />
           <Icon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black" /> */}
 
-          <EvervaultCard imageSrc="/logo/image.png" />
+          <EvervaultCard imageSrc={"/logo/image.png"} />
 
           
         </div>

@@ -14,6 +14,9 @@ import FallbackSpinner from "@/components/ui/spinner";
 import { Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import Image from "next/image";
+import logo from "@/public/logo/logo.png";
+import logoC from "@/public/logo/logoCuerpo.png";
 
 interface Voluntario {
   idVoluntario: number;
@@ -22,18 +25,15 @@ interface Voluntario {
   apellidop: string;
   apellidom: string;
 }
-
 interface TipoCitacion {
   idTipoLlamado: number;
   nombreTipoLlamado: string;
 }
-
 interface Movil {
   idMovil: number;
   nomenclatura: string;
   especialidad: string;
 }
-
 interface ParteAsistenciaResponse {
   folioPAsistencia: number;
   aCargoDelCuerpo: number;
@@ -105,6 +105,7 @@ export default function VisualizarParteAsistencia({
       logging: false,
       useCORS: true,
       backgroundColor: "#ffffff", // Asegura un fondo blanco
+      width:1100,
     });
 
     // Remover estilos específicos para PDF después de generar
@@ -120,20 +121,31 @@ export default function VisualizarParteAsistencia({
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
+    const margin = 35;
+    
+    const imgWidth = pdfWidth - (2*margin);
     const imgHeight = canvas.height;
-    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-    const imgX = (pdfWidth - imgWidth * ratio) / 2;
-    const imgY = 10; // Ajustado para dar un poco más de margen superior
 
-    pdf.addImage(
-      imgData,
-      "PNG",
-      imgX,
-      imgY,
-      imgWidth * ratio,
-      imgHeight * ratio
-    );
+    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+    const totalPages = Math.ceil((imgHeight * ratio) / pdfHeight);
+
+    for (let page = 0; page < totalPages; page++) {
+      if (page > 0) {
+        pdf.addPage();
+      }
+
+      const position = page * pdfHeight;
+      pdf.addImage(
+        imgData,
+        "PNG",
+        margin,
+        -position,
+        pdfWidth,
+        imgHeight * ratio
+      );
+            pdf.setFontSize(10);
+      pdf.text(`Página ${page + 1} de ${totalPages}`, pdfWidth / 2, pdfHeight - 5, { align: 'left' });
+    }
     pdf.save(`parte-asistencia-${folio}.pdf`);
   };
 
@@ -175,6 +187,27 @@ export default function VisualizarParteAsistencia({
           color: black;
           font-size: 12px;
         }
+        .pdf-mode .header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #3b82f6;
+        }
+        .pdf-mode .logo1 {
+          width: 100px;
+          height: 170px;
+        }
+        .pdf-mode .logo2 {
+          width: 130px;
+          height: 130px;
+        }
+        .pdf-mode h2 {
+          color: #1e40af;
+          font-size: 24px;
+          margin-bottom: 10px;
+        }
         .pdf-mode h3 {
           color: #1a202c;
           font-size: 16px;
@@ -187,19 +220,6 @@ export default function VisualizarParteAsistencia({
           margin-bottom: 8px;
           padding: 8px;
         }
-        .pdf-mode .grid {
-          display: grid;
-          gap: 16px;
-        }
-
-        .pdf-mode .grid.two-columns {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .pdf-mode .grid.three-columns {
-          grid-template-columns: repeat(3, 1fr);
-        }
-
         .pdf-mode .grid > div {
           border: 1px solid #d1d1d1;
           border-radius: 4px;
@@ -218,9 +238,27 @@ export default function VisualizarParteAsistencia({
       `}</style>
       <Card className="w-full max-w-3xl mx-auto">
         <div id="pdf-content" className="p-6">
+        <div className="header">
+            <div className="flex justify-between items-center w-full">
+              <Image
+                src={logo || "/placeholder.svg"}
+                alt="Logo de la organización"
+                width={100}
+                height={170}
+                className="logo1"
+              />
+              <h1>Parte de Asistencia número {folio}</h1>
+              <Image
+                src={logoC || "/placeholder.svg"}
+                alt="Logo de la organización"
+                width={130}
+                height={130}
+                className="logo2"
+              />
+            </div>
+          </div>
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl font-bold text-center">
-              Parte de Asistencia número {folio}
             </CardTitle>
           </CardHeader>
           <CardContent>
